@@ -180,14 +180,14 @@ export default async function AdminDashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {statCards.map((stat, i) => (
-          <div key={i} className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-200/80 dark:border-slate-800/80 shadow-sm flex items-center gap-5 hover:border-brand-500/30 transition-all duration-300">
+          <div key={i} className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-5 hover:border-brand-500/30 transition-all duration-300">
             <div className={`p-4 rounded-2xl ${stat.bg} shrink-0`}>
               <stat.icon className={`w-6 h-6 ${stat.color}`} />
             </div>
             <div className="min-w-0">
-              <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-0.5">{stat.label}</p>
+              <p className="text-xs text-slate-400 dark:text-slate-300 font-bold uppercase tracking-wider mb-0.5">{stat.label}</p>
               <p className="text-3xl font-black text-slate-900 dark:text-white leading-tight">{stat.value}</p>
-              <p className="text-slate-500 text-[11px] truncate mt-1">{stat.desc}</p>
+              <p className="text-slate-500 dark:text-slate-350 text-[11px] truncate mt-1">{stat.desc}</p>
             </div>
           </div>
         ))}
@@ -217,20 +217,20 @@ export default async function AdminDashboard() {
                   <div key={p.id} className="py-4 flex justify-between items-center first:pt-0 last:pb-0">
                     <div>
                       <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm line-clamp-1">{p.name}</h4>
-                      <p className="text-[11px] text-slate-400 uppercase font-semibold mt-0.5">Rating: {p.rating || "No score"} · Price: {p.price_range || "N/A"}</p>
+                      <p className="text-[11px] text-slate-400 dark:text-slate-350 uppercase font-semibold mt-0.5">Rating: {p.rating || "No score"} · Price: {p.price_range || "N/A"}</p>
                     </div>
-                    <span className={`px-2.5 py-0.5 text-[10px] font-bold rounded-full ${p.approval_status === "published" ? "bg-green-50 text-green-600 dark:bg-green-950/20" : "bg-amber-50 text-amber-600 dark:bg-amber-950/20"}`}>
+                    <span className={`px-2.5 py-0.5 text-[10px] font-bold rounded-full ${p.approval_status === "published" ? "bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400" : "bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400"}`}>
                       {p.approval_status || "draft"}
                     </span>
                   </div>
                 ))
               ) : (
-                <div className="text-center py-6 text-slate-400 text-xs font-medium">No products registered yet.</div>
+                <div className="text-center py-6 text-slate-400 dark:text-slate-350 text-xs font-medium">No products registered yet.</div>
               )}
             </div>
           </div>
 
-          {/* Recent Blog Posts */}
+          {/* Recent Blog Articles */}
           <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200/80 dark:border-slate-800 shadow-sm p-6 space-y-6">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
@@ -248,15 +248,15 @@ export default async function AdminDashboard() {
                   <div key={b.id} className="py-4 flex justify-between items-center first:pt-0 last:pb-0">
                     <div>
                       <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm line-clamp-1">{b.title}</h4>
-                      <p className="text-[11px] text-slate-400 uppercase font-semibold mt-0.5">Category: {b.category || "General"} · {b.read_time}</p>
+                      <p className="text-[11px] text-slate-400 dark:text-slate-350 uppercase font-semibold mt-0.5">Category: {b.category || "General"} · {b.read_time}</p>
                     </div>
-                    <span className="px-2.5 py-0.5 text-[10px] font-bold bg-blue-50 text-blue-600 dark:bg-blue-950/20 rounded-full capitalize">
+                    <span className="px-2.5 py-0.5 text-[10px] font-bold bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-full capitalize">
                       {b.status || "Published"}
                     </span>
                   </div>
                 ))
               ) : (
-                <div className="text-center py-6 text-slate-400 text-xs font-medium">No articles posted yet.</div>
+                <div className="text-center py-6 text-slate-400 dark:text-slate-350 text-xs font-medium">No articles posted yet.</div>
               )}
             </div>
           </div>
@@ -269,25 +269,25 @@ export default async function AdminDashboard() {
           <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200/80 dark:border-slate-800 shadow-sm p-6 space-y-6">
             <h3 className="text-lg font-black text-slate-950 dark:text-white">Quick Actions</h3>
             <div className="flex flex-col gap-2.5">
-              <Link href="/admin/products/new" className="p-3 bg-slate-50 hover:bg-brand-50/50 dark:bg-slate-800/40 dark:hover:bg-brand-950/20 rounded-xl transition-all text-left text-xs font-bold flex items-center justify-between group border border-transparent hover:border-brand-500/20">
+              <Link href="/admin/products/new" className="p-3 bg-slate-50 hover:bg-brand-50/50 dark:bg-slate-800/40 dark:hover:bg-brand-950/20 rounded-xl transition-all text-left text-xs font-bold flex items-center justify-between group border border-transparent hover:border-brand-500/20 text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400">
                 <span>Add Product</span>
-                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform group-hover:text-brand-500 dark:group-hover:text-brand-400" />
               </Link>
-              <Link href="/admin/product-importer" className="p-3 bg-slate-50 hover:bg-brand-50/50 dark:bg-slate-800/40 dark:hover:bg-brand-950/20 rounded-xl transition-all text-left text-xs font-bold flex items-center justify-between group border border-transparent hover:border-brand-500/20">
+              <Link href="/admin/product-importer" className="p-3 bg-slate-50 hover:bg-brand-50/50 dark:bg-slate-800/40 dark:hover:bg-brand-950/20 rounded-xl transition-all text-left text-xs font-bold flex items-center justify-between group border border-transparent hover:border-brand-500/20 text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400">
                 <span>Import Amazon Product</span>
-                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform group-hover:text-brand-500 dark:group-hover:text-brand-400" />
               </Link>
-              <Link href="/admin/blogs/new" className="p-3 bg-slate-50 hover:bg-brand-50/50 dark:bg-slate-800/40 dark:hover:bg-brand-950/20 rounded-xl transition-all text-left text-xs font-bold flex items-center justify-between group border border-transparent hover:border-brand-500/20">
+              <Link href="/admin/blogs/new" className="p-3 bg-slate-50 hover:bg-brand-50/50 dark:bg-slate-800/40 dark:hover:bg-brand-950/20 rounded-xl transition-all text-left text-xs font-bold flex items-center justify-between group border border-transparent hover:border-brand-500/20 text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400">
                 <span>Write Blog Post</span>
-                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform group-hover:text-brand-500 dark:group-hover:text-brand-400" />
               </Link>
-              <Link href="/admin/deals" className="p-3 bg-slate-50 hover:bg-brand-50/50 dark:bg-slate-800/40 dark:hover:bg-brand-950/20 rounded-xl transition-all text-left text-xs font-bold flex items-center justify-between group border border-transparent hover:border-brand-500/20">
+              <Link href="/admin/deals" className="p-3 bg-slate-50 hover:bg-brand-50/50 dark:bg-slate-800/40 dark:hover:bg-brand-950/20 rounded-xl transition-all text-left text-xs font-bold flex items-center justify-between group border border-transparent hover:border-brand-500/20 text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400">
                 <span>Add Discount Deal</span>
-                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform group-hover:text-brand-500 dark:group-hover:text-brand-400" />
               </Link>
-              <Link href="/admin/homepage" className="p-3 bg-slate-50 hover:bg-brand-50/50 dark:bg-slate-800/40 dark:hover:bg-brand-950/20 rounded-xl transition-all text-left text-xs font-bold flex items-center justify-between group border border-transparent hover:border-brand-500/20">
+              <Link href="/admin/homepage" className="p-3 bg-slate-50 hover:bg-brand-50/50 dark:bg-slate-800/40 dark:hover:bg-brand-950/20 rounded-xl transition-all text-left text-xs font-bold flex items-center justify-between group border border-transparent hover:border-brand-500/20 text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400">
                 <span>Manage Homepage Hero</span>
-                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform group-hover:text-brand-500 dark:group-hover:text-brand-400" />
               </Link>
             </div>
           </div>
@@ -308,12 +308,12 @@ export default async function AdminDashboard() {
                     </div>
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{u.name || u.email?.split("@")[0]}</p>
-                      <p className="text-[10px] text-slate-400 truncate">{u.email}</p>
+                      <p className="text-[10px] text-slate-400 dark:text-slate-350 truncate">{u.email}</p>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="text-center py-4 text-slate-400 text-xs">No users listed.</div>
+                <div className="text-center py-4 text-slate-400 dark:text-slate-350 text-xs">No users listed.</div>
               )}
             </div>
           </div>

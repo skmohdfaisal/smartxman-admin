@@ -101,20 +101,20 @@ export default function ProductImporterPage() {
           <Package className="w-8 h-8 text-brand-600" />
           Product Importer
         </h1>
-        <p className="text-slate-500 mt-2">Safely import Amazon affiliate products. Imported products are saved as drafts and require manual review.</p>
+        <p className="text-slate-500 dark:text-slate-400 mt-2">Safely import Amazon affiliate products. Imported products are saved as drafts and require manual review.</p>
       </div>
 
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 mb-8 shadow-sm">
         <div className="flex gap-4 mb-8 border-b border-slate-100 dark:border-slate-800 pb-4">
           <button 
             onClick={() => setMode("manual")}
-            className={`px-6 py-3 rounded-xl font-bold transition-all ${mode === "manual" ? "bg-brand-600 text-white shadow-md shadow-brand-500/20" : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"}`}
+            className={`px-6 py-3 rounded-xl font-bold transition-all ${mode === "manual" ? "bg-brand-600 text-white shadow-md shadow-brand-500/20" : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"}`}
           >
             Manual Link Import
           </button>
           <button 
             onClick={() => setMode("api")}
-            className={`px-6 py-3 rounded-xl font-bold transition-all ${mode === "api" ? "bg-brand-600 text-white shadow-md shadow-brand-500/20" : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"}`}
+            className={`px-6 py-3 rounded-xl font-bold transition-all ${mode === "api" ? "bg-brand-600 text-white shadow-md shadow-brand-500/20" : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"}`}
           >
             Amazon PA-API Search
           </button>

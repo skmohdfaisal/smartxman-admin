@@ -55,7 +55,7 @@ export default function ImportReviewPage() {
             <FileText className="w-8 h-8 text-brand-600" />
             Import Review Queue
           </h1>
-          <p className="text-slate-500 mt-2">Manage, approve, or reject imported affiliate products.</p>
+          <p className="text-slate-500 dark:text-slate-400 mt-2">Manage, approve, or reject imported affiliate products.</p>
         </div>
       </div>
 
@@ -81,7 +81,7 @@ export default function ImportReviewPage() {
             <Loader2 className="w-8 h-8 animate-spin text-brand-600" />
           </div>
         ) : products.length === 0 ? (
-          <div className="py-20 text-center text-slate-500">
+          <div className="py-20 text-center text-slate-500 dark:text-slate-400">
             No products found for this filter.
           </div>
         ) : (
@@ -109,7 +109,7 @@ export default function ImportReviewPage() {
                         </div>
                         <div>
                           <p className="font-bold text-slate-900 dark:text-white line-clamp-1">{product.name}</p>
-                          <p className="text-xs text-slate-500">{product.category_id || "No Category"} • {product.import_source || "Manual"}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{product.category_id || "No Category"} • {product.import_source || "Manual"}</p>
                         </div>
                       </div>
                     </td>

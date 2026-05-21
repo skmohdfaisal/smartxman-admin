@@ -59,7 +59,7 @@ export default async function AdminLayout({
             <Link href="/admin" className="text-lg font-black tracking-tighter text-brand-600 dark:text-brand-400 block leading-tight">
               smartXman
             </Link>
-            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none">Admin Panel</span>
+            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-350 uppercase tracking-widest leading-none">Admin Panel</span>
           </div>
         </div>
         
@@ -68,7 +68,7 @@ export default async function AdminLayout({
             <Link 
               key={idx} 
               href={item.href} 
-              className="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-[14px] font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-brand-600 dark:hover:text-brand-400 transition-all duration-200"
+              className="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-[14px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-brand-600 dark:hover:text-brand-400 transition-all duration-200"
             >
               <item.icon className="w-5 h-5 opacity-80" /> 
               <span>{item.label}</span>
@@ -83,7 +83,7 @@ export default async function AdminLayout({
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-black text-slate-700 dark:text-slate-300 truncate">{user.email?.split("@")[0]}</p>
-              <p className="text-[10px] font-bold text-slate-400 truncate">{user.email}</p>
+              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-350 truncate">{user.email}</p>
             </div>
           </div>
           <a href={storeUrl} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all text-center justify-center border border-transparent hover:border-red-200/30">
@@ -102,8 +102,8 @@ export default async function AdminLayout({
               <Menu className="w-6 h-6 text-slate-600 dark:text-slate-400" />
             </button>
             <div className="flex items-center gap-2">
-              <Link href="/admin" className="text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors">Admin</Link>
-              <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600" />
+              <Link href="/admin" className="text-sm font-semibold text-slate-500 dark:text-slate-350 hover:text-slate-700 dark:hover:text-white transition-colors">Admin</Link>
+              <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-400" />
               <span className="text-sm font-black text-slate-900 dark:text-white">Workspace</span>
             </div>
           </div>

@@ -107,7 +107,7 @@ export default function AuthPage() {
                 transition={{ duration: 0.2 }}
               >
                 <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Welcome Back</h2>
-                <p className="text-slate-500 mb-8">Sign in to your smartXman account.</p>
+                <p className="text-slate-500 dark:text-slate-400 mb-8">Sign in to your smartXman account.</p>
 
                 <form onSubmit={handleAuth} className="space-y-4">
                   <div className="space-y-1">
@@ -164,7 +164,7 @@ export default function AuthPage() {
                       onChange={(e) => setRememberMe(e.target.checked)}
                       className="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" 
                     />
-                    <label htmlFor="remember" className="text-sm text-slate-600 dark:text-slate-400 cursor-pointer">Remember me for 30 days</label>
+                    <label htmlFor="remember" className="text-sm text-slate-600 dark:text-slate-350 cursor-pointer">Remember me for 30 days</label>
                   </div>
 
                   {error && <p className="text-red-500 text-xs bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-100 dark:border-red-900/30">{error}</p>}
@@ -179,7 +179,7 @@ export default function AuthPage() {
 
                 <div className="relative my-8">
                   <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200 dark:border-slate-800"></div></div>
-                  <div className="relative flex justify-center text-sm"><span className="px-2 bg-white dark:bg-slate-900 text-slate-500">Or continue with</span></div>
+                  <div className="relative flex justify-center text-sm"><span className="px-2 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400">Or continue with</span></div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4">
@@ -208,7 +208,7 @@ export default function AuthPage() {
                 transition={{ duration: 0.2 }}
               >
                 <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Create Account</h2>
-                <p className="text-slate-500 mb-8">Join the smartXman community today.</p>
+                <p className="text-slate-500 dark:text-slate-400 mb-8">Join the smartXman community today.</p>
 
                 <form onSubmit={handleAuth} className="space-y-4">
                   <div className="space-y-1">
@@ -291,12 +291,12 @@ export default function AuthPage() {
               >
                 <button 
                   onClick={() => setMode("login")}
-                  className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 dark:hover:text-white mb-6"
+                  className="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-350 hover:text-slate-900 dark:hover:text-white mb-6"
                 >
                   <ArrowLeft className="w-4 h-4" /> Back to Login
                 </button>
                 <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Forgot Password</h2>
-                <p className="text-slate-500 mb-8">Enter your email and we&apos;ll send you a reset link.</p>
+                <p className="text-slate-500 dark:text-slate-400 mb-8">Enter your email and we&apos;ll send you a reset link.</p>
 
                 <form onSubmit={handleAuth} className="space-y-6">
                   <div className="space-y-1">
