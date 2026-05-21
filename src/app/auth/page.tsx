@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Mail, Lock, User, Globe, ArrowLeft, Loader2, CheckCircle2, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { createBrowserClient } from "@supabase/ssr";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -80,7 +81,10 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center p-4">
+    <div className="min-h-[90vh] flex flex-col items-center justify-center p-4 relative">
+      <div className="absolute top-6 right-6">
+        <ThemeToggle />
+      </div>
       <div className="max-w-md w-full">
         {/* Logo Link */}
         <div className="mb-8 flex items-center justify-center">

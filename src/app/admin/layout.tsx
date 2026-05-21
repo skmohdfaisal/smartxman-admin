@@ -20,6 +20,7 @@ import {
   Bell
 } from "lucide-react";
 import { checkAdmin } from "@/lib/auth";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default async function AdminLayout({
   children,
@@ -107,16 +108,18 @@ export default async function AdminLayout({
             </div>
           </div>
 
-          {/* Right: Notifications & Quick actions */}
-          <div className="flex items-center gap-4">
-            <button className="p-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-all relative">
+          {/* Right: Theme Toggle, Notifications & Quick actions */}
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            
+            <button className="p-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-all relative border border-transparent hover:border-slate-200/50 dark:hover:border-slate-700/50">
               <span className="absolute top-2 right-2.5 w-2 h-2 rounded-full bg-brand-500 ring-2 ring-white dark:ring-slate-900"></span>
               <Bell className="w-5 h-5" />
             </button>
             
             <a 
               href={storeUrl} 
-              className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 rounded-xl transition-all"
+              className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 rounded-xl transition-all border border-transparent hover:border-slate-200/50 dark:hover:border-slate-700/50"
             >
               View Site
             </a>
