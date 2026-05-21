@@ -4,9 +4,12 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mail, Lock, User, Globe, ArrowLeft, Loader2, CheckCircle2, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createBrowserClient } from "@supabase/ssr";
 
-const supabase = createClientComponentClient();
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export default function AuthPage() {
   const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
