@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeft, Save, Image as ImageIcon, Plus, X, Loader2, Trophy, Sparkles, ExternalLink, RefreshCw, AlertCircle, CheckCircle2 } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -25,7 +25,23 @@ export default function NewProduct() {
   const [expertNote, setExpertNote] = useState("");
   const [price, setPrice] = useState("");
   const [rating, setRating] = useState("0");
-  const [category, setCategory] = useState("Tech");
+  const [category, setCategory] = useState("");
+  
+  // States: Categories Data
+  const [dbCategories, setDbCategories] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function fetchCategories() {
+      const { data } = await supabase.from('categories').select('*').order('name');
+      if (data) {
+        setDbCategories(data);
+        if (data.length > 0 && !category) {
+          setCategory(data[0].slug); // Default to first category slug
+        }
+      }
+    }
+    fetchCategories();
+  }, []);
   
   // States: SmartXman Recommendations
   const [bestFor, setBestFor] = useState("");
@@ -372,11 +388,13 @@ export default function NewProduct() {
               <div>
                 <label className="block text-sm font-medium mb-1.5 text-slate-700 dark:text-slate-300">Category <span className="text-red-500">*</span></label>
                 <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full px-4 py-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
-                  <option value="Tech">Tech & Gadgets</option>
-                  <option value="Setup">Desk Setup</option>
-                  <option value="Audio">Audio & Headphones</option>
-                  <option value="Productivity">Productivity</option>
-                  <option value="Lifestyle">Lifestyle</option>
+                  {dbCategories.length > 0 ? (
+                    dbCategories.map(cat => (
+                      <option key={cat.id} value={cat.slug}>{cat.name}</option>
+                    ))
+                  ) : (
+                    <option value="">Loading categories...</option>
+                  )}
                 </select>
               </div>
 
