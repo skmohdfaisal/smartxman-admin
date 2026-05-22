@@ -77,7 +77,11 @@ export async function saveHomepageSettings(settings: any) {
         
         if (!error) {
           // Also sync to local JSON
-          fs.writeFileSync(JSON_PATH, JSON.stringify(payload, null, 2), "utf-8");
+          try {
+            fs.writeFileSync(JSON_PATH, JSON.stringify(payload, null, 2), "utf-8");
+          } catch(err) {
+            console.warn("Could not write local JSON fallback, read-only FS");
+          }
           revalidatePath("/");
           return { success: true, data: payload, source: "supabase" };
         }
@@ -87,7 +91,11 @@ export async function saveHomepageSettings(settings: any) {
     }
 
     // JSON write
-    fs.writeFileSync(JSON_PATH, JSON.stringify(payload, null, 2), "utf-8");
+    try {
+      fs.writeFileSync(JSON_PATH, JSON.stringify(payload, null, 2), "utf-8");
+    } catch(err) {
+      console.warn("Could not write local JSON fallback, read-only FS");
+    }
     revalidatePath("/");
     return { success: true, data: payload, source: "local" };
   } catch (error: any) {
