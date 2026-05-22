@@ -158,10 +158,8 @@ export default function NewProduct() {
           .upload(filePath, file, { cacheControl: '3600', upsert: false });
 
         if (uploadError) {
-          if (uploadError.message.includes('Bucket not found')) {
-            alert("Storage bucket 'products' not found. Please create it in Supabase.");
-            return;
-          }
+          console.error("Upload Error Details:", uploadError);
+          alert(`Upload Failed: ${uploadError.message}. Make sure the 'products' storage bucket exists and is public in Supabase.`);
           continue;
         }
 
