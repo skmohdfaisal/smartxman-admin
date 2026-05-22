@@ -26,6 +26,11 @@ export default function NewProduct() {
   const [price, setPrice] = useState("");
   const [rating, setRating] = useState("0");
   const [category, setCategory] = useState("");
+  const [additionalCategories, setAdditionalCategories] = useState<string[]>([]);
+  const [audience, setAudience] = useState<string[]>([]);
+  const [budgetRange, setBudgetRange] = useState<string[]>([]);
+  const [useCase, setUseCase] = useState<string[]>([]);
+  const [tags, setTags] = useState("");
   
   // States: Categories Data
   const [dbCategories, setDbCategories] = useState<any[]>([]);
@@ -36,7 +41,7 @@ export default function NewProduct() {
       if (data) {
         setDbCategories(data);
         if (data.length > 0 && !category) {
-          setCategory(data[0].slug); // Default to first category slug
+          setCategory(data[0].id); // Default to first category id
         }
       }
     }
@@ -65,6 +70,10 @@ export default function NewProduct() {
   const addArrayItem = (setter: React.Dispatch<React.SetStateAction<string[]>>) => setter(prev => [...prev, ""]);
   const removeArrayItem = (setter: React.Dispatch<React.SetStateAction<string[]>>, index: number) => {
     setter(prev => prev.length > 1 ? prev.filter((_, i) => i !== index) : [""]);
+  };
+
+  const handleMultiSelect = (setter: React.Dispatch<React.SetStateAction<string[]>>, value: string) => {
+    setter(prev => prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value]);
   };
 
   // States: Status and Visibility
@@ -213,8 +222,11 @@ export default function NewProduct() {
         price_range: price,
         rating: parseFloat(rating) || 0,
         images,
-        category_id: null, // Legacy, can update if categories table exists
-        // category: category, // If your DB uses a string category column
+        primary_category_id: category || null,
+        audience,
+        budget_range: budgetRange,
+        use_case: useCase,
+        tags: tags.split(',').map(t => t.trim()).filter(t => t),
         best_for: bestFor,
         who_should_buy: whoShouldBuy,
         who_should_avoid: whoShouldAvoid,
@@ -230,10 +242,29 @@ export default function NewProduct() {
         is_best_deal: isBestDeal
       };
 
-      const { error } = await supabase.from('products').insert([payload]);
+      const { data: newProduct, error } = await supabase.from('products').insert([payload]).select().single();
 
       if (error) {
         throw new Error(`Database Error: ${error.message}`);
+      }
+
+      // Handle product categories linkage
+      if (newProduct) {
+        const productCategories = [];
+        // Add primary category
+        if (category) {
+          productCategories.push({ product_id: newProduct.id, category_id: category });
+        }
+        // Add additional categories
+        additionalCategories.forEach(catId => {
+          if (catId !== category) {
+            productCategories.push({ product_id: newProduct.id, category_id: catId });
+          }
+        });
+        
+        if (productCategories.length > 0) {
+          await supabase.from('product_categories').insert(productCategories);
+        }
       }
 
       setSaveSuccess(true);
@@ -385,17 +416,77 @@ export default function NewProduct() {
                 <input type="text" value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="e.g. Logitech" className="w-full px-4 py-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500" />
               </div>
               
-              <div>
-                <label className="block text-sm font-medium mb-1.5 text-slate-700 dark:text-slate-300">Category <span className="text-red-500">*</span></label>
-                <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full px-4 py-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
-                  {dbCategories.length > 0 ? (
-                    dbCategories.map(cat => (
-                      <option key={cat.id} value={cat.slug}>{cat.name}</option>
-                    ))
-                  ) : (
-                    <option value="">Loading categories...</option>
-                  )}
-                </select>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-1.5 text-slate-700 dark:text-slate-300">Category & Discovery</label>
+                <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700 space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold mb-1 text-slate-500 uppercase">Primary Category <span className="text-red-500">*</span></label>
+                    <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full px-4 py-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                      {dbCategories.length > 0 ? (
+                        dbCategories.map(cat => (
+                          <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        ))
+                      ) : (
+                        <option value="">Loading categories...</option>
+                      )}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-xs font-bold mb-1 text-slate-500 uppercase">Additional Categories</label>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {dbCategories.filter(c => c.id !== category).map(cat => (
+                        <label key={cat.id} className="flex items-center gap-1.5 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 cursor-pointer hover:border-brand-300 transition-colors">
+                          <input type="checkbox" checked={additionalCategories.includes(cat.id)} onChange={() => handleMultiSelect(setAdditionalCategories, cat.id)} className="w-3.5 h-3.5 text-brand-600 rounded border-slate-300" />
+                          <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{cat.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold mb-1 text-slate-500 uppercase">Audience</label>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {['Students', 'Creators', 'Gamers', 'Working Professionals', 'Setup Lovers', 'Everyday Buyers'].map(aud => (
+                          <label key={aud} className="flex items-center gap-1.5 cursor-pointer">
+                            <input type="checkbox" checked={audience.includes(aud)} onChange={() => handleMultiSelect(setAudience, aud)} className="text-brand-600 rounded border-slate-300" />
+                            <span className="text-xs text-slate-600 dark:text-slate-400">{aud}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold mb-1 text-slate-500 uppercase">Use Case</label>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {['Study', 'Gaming', 'Content Creation', 'Desk Setup', 'Productivity', 'Work From Home', 'Travel', 'Lifestyle'].map(uc => (
+                          <label key={uc} className="flex items-center gap-1.5 cursor-pointer">
+                            <input type="checkbox" checked={useCase.includes(uc)} onChange={() => handleMultiSelect(setUseCase, uc)} className="text-brand-600 rounded border-slate-300" />
+                            <span className="text-xs text-slate-600 dark:text-slate-400">{uc}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold mb-1 text-slate-500 uppercase">Budget Range</label>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {['Under ₹500', 'Under ₹1000', 'Under ₹3000', 'Under ₹5000', 'Under ₹10000', 'Premium'].map(br => (
+                          <label key={br} className="flex items-center gap-1.5 cursor-pointer">
+                            <input type="checkbox" checked={budgetRange.includes(br)} onChange={() => handleMultiSelect(setBudgetRange, br)} className="text-brand-600 rounded border-slate-300" />
+                            <span className="text-xs text-slate-600 dark:text-slate-400">{br}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold mb-1 text-slate-500 uppercase">Tags</label>
+                      <input type="text" value={tags} onChange={(e) => setTags(e.target.value)} placeholder="tech, gadget, wireless (comma separated)" className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm" />
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="md:col-span-2">

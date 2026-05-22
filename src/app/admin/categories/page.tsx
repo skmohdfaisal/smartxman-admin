@@ -9,6 +9,9 @@ export default function AdminCategories() {
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [newCategory, setNewCategory] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [newIcon, setNewIcon] = useState("");
+  const [newImageUrl, setNewImageUrl] = useState("");
   const [isAdding, setIsAdding] = useState(false);
 
   useEffect(() => {
@@ -39,13 +42,22 @@ export default function AdminCategories() {
       const slug = newCategory.toLowerCase().replace(/\s+/g, '-');
       const { data, error } = await supabase
         .from('categories')
-        .insert([{ name: newCategory, slug }])
+        .insert([{ 
+           name: newCategory, 
+           slug,
+           description: newDescription,
+           icon: newIcon,
+           image_url: newImageUrl
+        }])
         .select();
 
       if (error) throw error;
       
       setCategories([...categories, data[0]]);
       setNewCategory("");
+      setNewDescription("");
+      setNewIcon("");
+      setNewImageUrl("");
     } catch (error: any) {
       alert(`Error adding category: ${error.message}`);
     } finally {
@@ -74,12 +86,42 @@ export default function AdminCategories() {
             <h3 className="font-bold text-slate-900 dark:text-white mb-4">Add New Category</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1.5 text-slate-700 dark:text-slate-300">Category Name</label>
+                <label className="block text-sm font-medium mb-1.5 text-slate-700 dark:text-slate-300">Category Name <span className="text-red-500">*</span></label>
                 <input 
                   type="text" 
                   value={newCategory}
                   onChange={(e) => setNewCategory(e.target.value)}
                   placeholder="e.g. Mechanical Keyboards" 
+                  className="w-full px-4 py-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500" 
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5 text-slate-700 dark:text-slate-300">Description</label>
+                <textarea 
+                  value={newDescription}
+                  onChange={(e) => setNewDescription(e.target.value)}
+                  placeholder="Category description..." 
+                  className="w-full px-4 py-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500" 
+                  rows={2}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5 text-slate-700 dark:text-slate-300">Icon (Lucide name or emoji)</label>
+                <input 
+                  type="text" 
+                  value={newIcon}
+                  onChange={(e) => setNewIcon(e.target.value)}
+                  placeholder="e.g. MonitorSmartphone" 
+                  className="w-full px-4 py-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500" 
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5 text-slate-700 dark:text-slate-300">Image URL</label>
+                <input 
+                  type="text" 
+                  value={newImageUrl}
+                  onChange={(e) => setNewImageUrl(e.target.value)}
+                  placeholder="https://..." 
                   className="w-full px-4 py-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500" 
                 />
               </div>
