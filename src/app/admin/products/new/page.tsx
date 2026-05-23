@@ -274,6 +274,10 @@ export default function NewProduct() {
     newImgs.unshift(selected);
     setImages(newImgs);
   };
+  const handleUrlChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const urls = e.target.value.split('\n').filter(url => url.trim() !== '');
+    setImages(urls);
+  };
 
   // Calculate Product Health Score
   const healthChecklist = [
