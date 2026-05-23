@@ -34,6 +34,25 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
+const subCategorySuggestions: Record<string, string[]> = {
+  "Laptop Accessories": ["Laptop Stand", "Cooling Pad", "Laptop Sleeve", "USB Hub", "Keyboard", "Mouse", "Webcam", "Laptop Cleaning Kit", "Charger", "Monitor Stand"],
+  "Desk Setup": ["Desk Mat", "Laptop Stand", "Monitor Stand", "Cable Organizer", "Desk Lamp", "Phone Stand", "Keyboard", "Mouse", "Chair Accessories", "Storage Organizer"],
+  "Creator Gear": ["Microphone", "Ring Light", "Tripod", "Webcam", "Phone Holder", "Studio Light", "Background Stand", "Camera Accessories", "Editing Accessories"],
+  "Mobile Accessories": ["Phone Stand", "Power Bank", "Charger", "Cable", "Earbuds", "Mobile Holder", "Screen Protector", "Back Cover", "Car Charger"],
+  "Audio Gear": ["Earbuds", "Headphones", "Microphone", "Speaker", "Soundbar", "Audio Interface", "Lavalier Mic", "Wireless Mic"],
+  "Gaming Accessories": ["Gaming Mouse", "Gaming Keyboard", "Headset", "Controller", "Mouse Pad", "Cooling Pad", "Gaming Chair Accessories"],
+  "Student Essentials": ["Laptop Stand", "Notebook Accessories", "Study Lamp", "Backpack", "Power Bank", "Earbuds", "Desk Organizer"],
+  "Productivity Tools": ["Keyboard", "Mouse", "Desk Timer", "Planner", "Desk Organizer", "Monitor Stand", "Laptop Stand"],
+  "Work From Home": ["Webcam", "Microphone", "Laptop Stand", "Keyboard", "Mouse", "Desk Lamp", "Chair Accessories", "WiFi Router"],
+  "Travel Tech": ["Power Bank", "Travel Adapter", "Cable Organizer", "Earbuds", "Backpack Tech Organizer", "Portable Charger"],
+  "Lifestyle Gear": ["Smart Bottle", "Mini Fan", "Organizer", "Daily Use Gadget", "Personal Care Gadget"],
+  "Budget Finds": ["Under ₹500", "Under ₹1000", "Under ₹3000", "Value Picks", "Best Deals"],
+  "Tech Accessories": ["Laptop Stand", "Wireless Mouse", "Keyboard", "Microphone", "Lighting", "Headphones", "Desk Mat", "Phone Stand", "Power Bank", "USB Hub", "Webcam", "Monitor Arm"],
+  "Home Office": ["Ergonomic Chair", "Desk Lamp", "Monitor Arm", "Cable Management", "Footrest"],
+  "Smart Gadgets": ["Smart Plug", "Smart Bulb", "Sensor", "Voice Assistant", "Smart Display"],
+  "Daily Use Products": ["Tumbler", "Organizer", "Keychain", "Cleaning Gel", "Desk Toy"]
+};
+
 export default function NewProduct() {
   const router = useRouter();
   
@@ -401,6 +420,7 @@ export default function NewProduct() {
   };
 
   const currentCategoryName = dbCategories.find(c => c.id === category)?.name || "";
+  const suggestions = subCategorySuggestions[currentCategoryName] || [];
 
   return (
     <div className="p-8 max-w-7xl mx-auto min-h-screen">
@@ -760,6 +780,32 @@ export default function NewProduct() {
                       placeholder="e.g. Laptop Stand, Keyboard, Mechanical Keyboard" 
                       className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm font-semibold" 
                     />
+                    
+                    {suggestions.length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Quick Suggestions:</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {suggestions.map(s => {
+                            const isSelected = subCategory.toLowerCase().trim() === s.toLowerCase().trim();
+                            return (
+                              <button
+                                key={s}
+                                type="button"
+                                onClick={() => setSubCategory(s)}
+                                className={cn(
+                                  "px-2 py-1 rounded-lg text-xs font-semibold border transition-all",
+                                  isSelected 
+                                    ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-sm"
+                                    : "bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-650 dark:text-slate-400 border-slate-200 dark:border-slate-800"
+                                )}
+                              >
+                                {s}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
