@@ -91,7 +91,7 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
   const [rating, setRating] = useState("0");
   
   // States: Targeting
-  const [category, setCategory] = useState("");
+  const [category, setCategory] = useState<string[]>([]);
   const [subCategory, setSubCategory] = useState("");
   const [additionalCategories, setAdditionalCategories] = useState<string[]>([]);
   const [audience, setAudience] = useState<string[]>([]);
@@ -254,9 +254,18 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
         setExpertNote(data.expert_note || "");
         setOriginalAmazonUrl(data.original_url || "");
         setAffiliateLink(data.affiliate_link || "");
-        setPrice(data.price_range || "");
-        setRating(data.rating?.toString() || "0");
-        setCategory(data.primary_category_id || "");
+        const selectedCats: string[] = [];
+        if (data.primary_category_id) {
+          selectedCats.push(data.primary_category_id);
+        }
+        if (data.product_categories) {
+          data.product_categories.forEach((pc: any) => {
+            if (pc.category_id && !selectedCats.includes(pc.category_id)) {
+              selectedCats.push(pc.category_id);
+            }
+          });
+        }
+        setCategory(selectedCats);
         setSubCategory(data.sub_category || "");
         setAudience(data.audience || []);
         setBudgetRange(data.budget_range || []);
@@ -282,7 +291,7 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
         setSlug(data.slug || "");
         
         if (data.product_categories) {
-          setAdditionalCategories(data.product_categories.map((pc: any) => pc.category_id).filter((cid: string) => cid !== data.primary_category_id));
+          setAdditionalCategories([]);
         }
       } catch (error) {
         console.error("Error fetching product:", error);
@@ -454,7 +463,7 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
     { name: "Product image added", checked: images.length > 0 },
     { name: "Price added", checked: !!price },
     { name: "Rating added", checked: parseFloat(rating) > 0 },
-    { name: "Main category selected", checked: !!category },
+    { name: "Main category selected", checked: category.length > 0 },
     { name: "Short buying advice added", checked: !!expertNote },
     { name: "Pros and cons added", checked: pros.some(p => p.trim()) && cons.some(c => c.trim()) },
     { name: "Final recommendation added", checked: !!buyingVerdict },
@@ -470,8 +479,8 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
     setSaveError(null);
     setSaveSuccess(false);
 
-    if (!name || !category) {
-      setSaveError("Please enter at least a Product Name and select a Main Category.");
+    if (!name || category.length === 0) {
+      setSaveError("Please enter at least a Product Name and select at least one Main Category.");
       setStep(2); // Jump to Details step
       return;
     }
@@ -500,7 +509,7 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
         price_range: price,
         rating: parseFloat(rating) || 0,
         images,
-        primary_category_id: category || null,
+        primary_category_id: category[0] || null,
         sub_category: subCategory,
         audience,
         budget_range: budgetRange,
@@ -533,15 +542,10 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
 
       // Handle categories linkage
       await supabase.from('product_categories').delete().eq('product_id', id);
-      const productCategories = [];
-      if (category) {
-        productCategories.push({ product_id: id, category_id: category });
-      }
-      additionalCategories.forEach(catId => {
-        if (catId !== category) {
-          productCategories.push({ product_id: id, category_id: catId });
-        }
-      });
+      const productCategories = category.map(catId => ({
+        product_id: id,
+        category_id: catId
+      }));
       
       if (productCategories.length > 0) {
         await supabase.from('product_categories').insert(productCategories);
@@ -567,8 +571,14 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
     try { new URL(url); return true; } catch { return false; }
   };
 
-  const currentCategoryName = dbCategories.find(c => c.id === category)?.name || "";
-  const suggestions = subCategorySuggestions[currentCategoryName] || [];
+  const currentCategoryNames = category.map(catId => dbCategories.find(c => c.id === catId)?.name || "").filter(Boolean);
+  const currentCategoryName = currentCategoryNames.join(", ");
+  const suggestions = Array.from(new Set(
+    category.flatMap(catId => {
+      const catName = dbCategories.find(c => c.id === catId)?.name || "";
+      return subCategorySuggestions[catName] || [];
+    })
+  ));
 
   if (loading) {
     return (
@@ -912,25 +922,46 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
               </div>
 
               <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div className="space-y-1.5">
-                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Main Category <span className="text-brand-500">*</span></label>
-                    <select 
-                      value={category} 
-                      onChange={(e) => setCategory(e.target.value)} 
-                      className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 font-semibold"
-                    >
-                      {dbCategories.length > 0 ? (
-                        dbCategories.map(cat => (
-                          <option key={cat.id} value={cat.id}>{cat.name}</option>
-                        ))
-                      ) : (
-                        <option value="">Loading categories...</option>
-                      )}
-                    </select>
-                  </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Main Categories (Select Multiple) <span className="text-brand-500">*</span></label>
+                  {dbCategories.length > 0 ? (
+                    <div className="flex flex-wrap gap-2 p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-800">
+                      {dbCategories.map(cat => {
+                        const isSelected = category.includes(cat.id);
+                        return (
+                          <button
+                            key={cat.id}
+                            type="button"
+                            onClick={() => {
+                              if (isSelected) {
+                                setCategory(prev => prev.filter(id => id !== cat.id));
+                              } else {
+                                setCategory(prev => [...prev, cat.id]);
+                              }
+                            }}
+                            className={cn(
+                              "flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-bold cursor-pointer transition-all",
+                              isSelected
+                                ? "bg-brand-600 text-white border-brand-600 shadow-md shadow-brand-500/25"
+                                : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-350 hover:bg-slate-50 dark:hover:bg-slate-800/55 text-slate-700 dark:text-slate-300"
+                            )}
+                          >
+                            <Tag className="w-3.5 h-3.5" />
+                            <span>{cat.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="p-4 text-center text-slate-400 font-bold bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-800">
+                      <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2 text-brand-600" />
+                      Loading categories...
+                    </div>
+                  )}
+                </div>
 
-                  <div className="space-y-1.5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="space-y-1.5 md:col-span-2">
                     <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Sub Category / Related Category</label>
                     <input 
                       type="text" 
@@ -969,27 +1000,6 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                 </div>
 
                 <div className="bg-slate-50 dark:bg-slate-800/30 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-5">
-                  <div className="space-y-2">
-                    <label className="block text-xs font-black uppercase text-slate-400 tracking-widest">Related Categories (Additional Exposure)</label>
-                    <div className="flex flex-wrap gap-2">
-                      {dbCategories.filter(c => c.id !== category).map(cat => (
-                        <label key={cat.id} className={cn(
-                          "flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold cursor-pointer transition-all",
-                          additionalCategories.includes(cat.id) 
-                            ? "bg-brand-50/50 dark:bg-brand-950 border-brand-350 dark:border-brand-800 text-brand-650 dark:text-brand-400"
-                            : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-850 hover:border-slate-350 hover:bg-slate-50/80 text-slate-700 dark:text-slate-300"
-                        )}>
-                          <input 
-                            type="checkbox" 
-                            checked={additionalCategories.includes(cat.id)} 
-                            onChange={() => handleMultiSelect(setAdditionalCategories, cat.id)} 
-                            className="hidden" 
-                          />
-                          <span>{cat.name}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
                     <div className="space-y-2">
