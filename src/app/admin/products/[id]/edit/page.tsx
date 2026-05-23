@@ -732,7 +732,7 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                 <div className="bg-slate-50 dark:bg-slate-800/30 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex gap-6 items-center animate-in zoom-in-95 duration-200">
                   <div className="w-24 h-24 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden relative shrink-0">
                     {detectedProduct.image ? (
-                      <Image src={detectedProduct.image} alt={detectedProduct.name} fill className="object-contain p-2" />
+                      <img src={detectedProduct.image} alt={detectedProduct.name} className="w-full h-full object-contain p-2" />
                     ) : (
                       <ImageIcon className="w-8 h-8 text-slate-400 m-8" />
                     )}
@@ -865,7 +865,7 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                       <div className="grid grid-cols-6 gap-3">
                         {images.filter(isValidUrl).map((url, idx) => (
                           <div key={idx} className={cn("aspect-square bg-slate-50 dark:bg-slate-800/50 rounded-xl border overflow-hidden relative group", idx === 0 ? "border-brand-500 ring-2 ring-brand-500/10" : "border-slate-200 dark:border-slate-800")}>
-                            <Image src={url} alt={`Preview ${idx}`} fill className="object-cover" />
+                            <img src={url} alt={`Preview ${idx}`} className="w-full h-full object-cover" />
                             <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-1.5">
                               {idx !== 0 && (
                                 <button type="button" onClick={() => setAsThumbnail(idx)} className="p-1 bg-white hover:bg-brand-50 text-slate-900 rounded-lg shadow-sm transition-all" title="Set as thumbnail">
@@ -1501,7 +1501,7 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                 {/* Image panel */}
                 <div className="aspect-[4/3] bg-slate-50 dark:bg-slate-855 relative w-full flex items-center justify-center p-6 border-b border-slate-100 dark:border-slate-800">
                   {images.length > 0 && isValidUrl(images[0]) ? (
-                    <Image src={images[0]} alt="Product preview" fill className="object-contain p-4 drop-shadow-lg" />
+                    <img src={images[0]} alt="Product preview" className="w-full h-full object-contain p-4 drop-shadow-lg" />
                   ) : (
                     <div className="flex flex-col items-center gap-2 text-slate-350 dark:text-slate-600">
                       <ImageIcon className="w-14 h-14" />

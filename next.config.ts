@@ -11,11 +11,23 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "**",
+        hostname: "**.media-amazon.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.ssl-images-amazon.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.supabase.co",
       },
       {
         protocol: "http",
-        hostname: "**",
+        hostname: "**.media-amazon.com",
+      },
+      {
+        protocol: "http",
+        hostname: "**.ssl-images-amazon.com",
       },
     ],
   },
