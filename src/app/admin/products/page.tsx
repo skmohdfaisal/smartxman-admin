@@ -41,6 +41,11 @@ export default function AdminProducts() {
   const [missingDataFilter, setMissingDataFilter] = useState("all");
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const catParam = params.get("category");
+    if (catParam) {
+      setSelectedCategory(catParam);
+    }
     fetchData();
   }, []);
 
