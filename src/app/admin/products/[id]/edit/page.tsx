@@ -137,22 +137,22 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
   useEffect(() => {
     async function fetchAndSeedCategories() {
       const coreCategories = [
-        { name: "Laptop Accessories", slug: "laptop-accessories", icon: "Laptop", description: "Essential gear for your laptop comfort and productivity" },
-        { name: "Desk Setup", slug: "desk-setup", icon: "Briefcase", description: "Ergonomics, organizers, and mats for a clean workspace" },
-        { name: "Tech Accessories", slug: "tech-accessories", icon: "MonitorSmartphone", description: "Essential daily tech items and accessories" },
-        { name: "Creator Gear", slug: "creator-gear", icon: "Video", description: "Microphones, tripods, lighting, and gear for creators" },
-        { name: "Mobile Accessories", slug: "mobile-accessories", icon: "Smartphone", description: "Power banks, chargers, cases, and phone holders" },
-        { name: "Audio Gear", slug: "audio-gear", icon: "Headphones", description: "Headphones, earbuds, speakers, and audio gear" },
-        { name: "Gaming Accessories", slug: "gaming-accessories", icon: "Gamepad2", description: "Gaming keyboards, mice, headsets, and controllers" },
-        { name: "Student Essentials", slug: "student-essentials", icon: "GraduationCap", description: "Dorm study essentials, bags, and budget accessories" },
-        { name: "Productivity Tools", slug: "productivity-tools", icon: "Zap", description: "Timers, organizers, keyboard shortcuts, and focus gear" },
-        { name: "Work From Home", slug: "work-from-home", icon: "Home", description: "Ergonomics and connectivity for remote working professionals" },
-        { name: "Home Office", slug: "home-office", icon: "Building", description: "Desk setups and furniture upgrades for your home office" },
-        { name: "Smart Gadgets", slug: "smart-gadgets", icon: "Cpu", description: "Smart home assistants, plugs, bulbs, and displays" },
-        { name: "Travel Tech", slug: "travel-tech", icon: "Compass", description: "Travel adapters, portable chargers, and tech organizers" },
-        { name: "Lifestyle Gear", slug: "lifestyle-gear", icon: "Sparkles", description: "Daily gadgets, personal care items, and smart bottles" },
-        { name: "Budget Finds", slug: "budget-finds", icon: "DollarSign", description: "High value products and accessories under ₹1000" },
-        { name: "Daily Use Products", slug: "daily-use-products", icon: "Heart", description: "Everyday carry items, keychains, and cleaning products" }
+        { id: "c0000000-0000-0000-0000-000000000001", name: "Laptop Accessories", slug: "laptop-accessories", icon: "Laptop", description: "Essential gear for your laptop comfort and productivity" },
+        { id: "c0000000-0000-0000-0000-000000000002", name: "Desk Setup", slug: "desk-setup", icon: "Briefcase", description: "Ergonomics, organizers, and mats for a clean workspace" },
+        { id: "c0000000-0000-0000-0000-000000000003", name: "Tech Accessories", slug: "tech-accessories", icon: "MonitorSmartphone", description: "Essential daily tech items and accessories" },
+        { id: "c0000000-0000-0000-0000-000000000004", name: "Creator Gear", slug: "creator-gear", icon: "Video", description: "Microphones, tripods, lighting, and gear for creators" },
+        { id: "c0000000-0000-0000-0000-000000000005", name: "Mobile Accessories", slug: "mobile-accessories", icon: "Smartphone", description: "Power banks, chargers, cases, and phone holders" },
+        { id: "c0000000-0000-0000-0000-000000000006", name: "Audio Gear", slug: "audio-gear", icon: "Headphones", description: "Headphones, earbuds, speakers, and audio gear" },
+        { id: "c0000000-0000-0000-0000-000000000007", name: "Gaming Accessories", slug: "gaming-accessories", icon: "Gamepad2", description: "Gaming keyboards, mice, headsets, and controllers" },
+        { id: "c0000000-0000-0000-0000-000000000008", name: "Student Essentials", slug: "student-essentials", icon: "GraduationCap", description: "Dorm study essentials, bags, and budget accessories" },
+        { id: "c0000000-0000-0000-0000-000000000009", name: "Productivity Tools", slug: "productivity-tools", icon: "Zap", description: "Timers, organizers, keyboard shortcuts, and focus gear" },
+        { id: "c0000000-0000-0000-0000-000000000010", name: "Work From Home", slug: "work-from-home", icon: "Home", description: "Ergonomics and connectivity for remote working professionals" },
+        { id: "c0000000-0000-0000-0000-000000000011", name: "Home Office", slug: "home-office", icon: "Building", description: "Desk setups and furniture upgrades for your home office" },
+        { id: "c0000000-0000-0000-0000-000000000012", name: "Smart Gadgets", slug: "smart-gadgets", icon: "Cpu", description: "Smart home assistants, plugs, bulbs, and displays" },
+        { id: "c0000000-0000-0000-0000-000000000013", name: "Travel Tech", slug: "travel-tech", icon: "Compass", description: "Travel adapters, portable chargers, and tech organizers" },
+        { id: "c0000000-0000-0000-0000-000000000014", name: "Lifestyle Gear", slug: "lifestyle-gear", icon: "Sparkles", description: "Daily gadgets, personal care items, and smart bottles" },
+        { id: "c0000000-0000-0000-0000-000000000015", name: "Budget Finds", slug: "budget-finds", icon: "DollarSign", description: "High value products and accessories under ₹1000" },
+        { id: "c0000000-0000-0000-0000-000000000016", name: "Daily Use Products", slug: "daily-use-products", icon: "Heart", description: "Everyday carry items, keychains, and cleaning products" }
       ];
 
       let dbFetchedCats: any[] = [];
@@ -164,13 +164,10 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
         console.error("Failed to fetch categories from database:", err);
       }
 
-      // If we couldn't fetch anything from DB, fall back to core static categories with mock UUIDs so the dropdown is NEVER empty or stuck loading!
+      // If we couldn't fetch anything from DB, fall back to core static categories list so the dropdown is NEVER empty or stuck loading!
       if (dbFetchedCats.length === 0) {
         console.warn("Falling back to static core categories list...");
-        dbFetchedCats = coreCategories.map((cc, i) => ({
-          id: `static-fallback-id-${i}`,
-          ...cc
-        }));
+        dbFetchedCats = coreCategories;
       }
 
       let finalCats = [...dbFetchedCats];
