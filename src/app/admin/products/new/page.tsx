@@ -130,18 +130,87 @@ export default function NewProduct() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isGeneratingAiNote, setIsGeneratingAiNote] = useState(false);
 
-  // Load Categories on Mount
+  // Load Curated Categories & Auto-seed dynamically from browser if missing
   useEffect(() => {
-    async function fetchCategories() {
-      const { data } = await supabase.from('categories').select('*').order('name');
-      if (data) {
-        setDbCategories(data);
-        if (data.length > 0 && !category) {
-          setCategory(data[0].id);
+    async function fetchAndSeedCategories() {
+      try {
+        const { data: existingCats } = await supabase.from('categories').select('*');
+        
+        const coreCategories = [
+          { name: "Laptop Accessories", slug: "laptop-accessories", icon: "Laptop", description: "Essential gear for your laptop comfort and productivity" },
+          { name: "Desk Setup", slug: "desk-setup", icon: "Briefcase", description: "Ergonomics, organizers, and mats for a clean workspace" },
+          { name: "Tech Accessories", slug: "tech-accessories", icon: "MonitorSmartphone", description: "Essential daily tech items and accessories" },
+          { name: "Creator Gear", slug: "creator-gear", icon: "Video", description: "Microphones, tripods, lighting, and gear for creators" },
+          { name: "Mobile Accessories", slug: "mobile-accessories", icon: "Smartphone", description: "Power banks, chargers, cases, and phone holders" },
+          { name: "Audio Gear", slug: "audio-gear", icon: "Headphones", description: "Headphones, earbuds, speakers, and audio gear" },
+          { name: "Gaming Accessories", slug: "gaming-accessories", icon: "Gamepad2", description: "Gaming keyboards, mice, headsets, and controllers" },
+          { name: "Student Essentials", slug: "student-essentials", icon: "GraduationCap", description: "Dorm study essentials, bags, and budget accessories" },
+          { name: "Productivity Tools", slug: "productivity-tools", icon: "Zap", description: "Timers, organizers, keyboard shortcuts, and focus gear" },
+          { name: "Work From Home", slug: "work-from-home", icon: "Home", description: "Ergonomics and connectivity for remote working professionals" },
+          { name: "Home Office", slug: "home-office", icon: "Building", description: "Desk setups and furniture upgrades for your home office" },
+          { name: "Smart Gadgets", slug: "smart-gadgets", icon: "Cpu", description: "Smart home assistants, plugs, bulbs, and displays" },
+          { name: "Travel Tech", slug: "travel-tech", icon: "Compass", description: "Travel adapters, portable chargers, and tech organizers" },
+          { name: "Lifestyle Gear", slug: "lifestyle-gear", icon: "Sparkles", description: "Daily gadgets, personal care items, and smart bottles" },
+          { name: "Budget Finds", slug: "budget-finds", icon: "DollarSign", description: "High value products and accessories under ₹1000" },
+          { name: "Daily Use Products", slug: "daily-use-products", icon: "Heart", description: "Everyday carry items, keychains, and cleaning products" }
+        ];
+
+        let finalCats = existingCats || [];
+
+        // Check if we need to seed missing core categories
+        const missingCats = coreCategories.filter(cc => !finalCats.some(ec => ec.slug === cc.slug));
+        
+        if (missingCats.length > 0) {
+          const { data: insertedCats } = await supabase
+            .from('categories')
+            .insert(missingCats)
+            .select();
+          
+          if (insertedCats) {
+            finalCats = [...finalCats, ...insertedCats];
+          }
         }
+
+        // Clean up legacy categories ('Gaming', 'Youtuber')
+        const weakSlugs = ["gaming", "youtuber", "gaming-setup", "creator-setup"];
+        const oldCatsToDelete = finalCats.filter(ec => weakSlugs.includes(ec.slug));
+        
+        if (oldCatsToDelete.length > 0) {
+          const gamingAccId = finalCats.find(c => c.slug === 'gaming-accessories')?.id;
+          const creatorGearId = finalCats.find(c => c.slug === 'creator-gear')?.id;
+          
+          for (const oldCat of oldCatsToDelete) {
+            const newId = oldCat.slug.includes("gaming") ? gamingAccId : creatorGearId;
+            if (newId) {
+              // Remap products to prevent foreign key errors
+              await supabase.from('products').update({ primary_category_id: newId }).eq('primary_category_id', oldCat.id);
+              await supabase.from('product_categories').update({ category_id: newId }).eq('category_id', oldCat.id);
+            }
+            // Delete old record
+            await supabase.from('categories').delete().eq('id', oldCat.id);
+          }
+          finalCats = finalCats.filter(ec => !weakSlugs.includes(ec.slug));
+        }
+
+        // Sort dynamically based on our requested list order
+        const sortedCats = [...finalCats].sort((a, b) => {
+          const idxA = coreCategories.findIndex(cc => cc.slug === a.slug);
+          const idxB = coreCategories.findIndex(cc => cc.slug === b.slug);
+          if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+          return a.name.localeCompare(b.name);
+        });
+
+        setDbCategories(sortedCats);
+        
+        if (sortedCats.length > 0 && !category) {
+          setCategory(sortedCats[0].id);
+        }
+      } catch (err) {
+        console.error("Auto-seeder failed:", err);
       }
     }
-    fetchCategories();
+    
+    fetchAndSeedCategories();
   }, []);
 
   // Auto-generate slug from name
