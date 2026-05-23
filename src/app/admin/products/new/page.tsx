@@ -92,6 +92,7 @@ export default function NewProduct() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isGeneratingAiNote, setIsGeneratingAiNote] = useState(false);
 
   // Handlers: Amazon Import
   const handleFetchAmazon = async () => {
@@ -135,6 +136,29 @@ export default function NewProduct() {
       setAmazonFetchMessage({ type: 'error', text: error.message });
     } finally {
       setIsFetchingAmazon(false);
+    }
+  };
+
+  // Handlers: AI Note Generation
+  const handleGenerateAiNote = async () => {
+    if (!name || !description) return;
+    setIsGeneratingAiNote(true);
+    try {
+      const res = await fetch("/api/ai/generate-note", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, description })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      if (data.expertNote) {
+        setExpertNote(data.expertNote);
+      }
+    } catch (error: any) {
+      console.error("AI Generation error:", error);
+      alert(`AI Generation failed: ${error.message}`);
+    } finally {
+      setIsGeneratingAiNote(false);
     }
   };
 
@@ -493,7 +517,27 @@ export default function NewProduct() {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-1.5 text-slate-700 dark:text-slate-300">Expert Note (The Hook)</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Expert Note (The Hook)</label>
+                  <button
+                    type="button"
+                    onClick={handleGenerateAiNote}
+                    disabled={isGeneratingAiNote || !name || !description}
+                    className="text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-350 text-xs font-bold flex items-center gap-1 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {isGeneratingAiNote ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+                        Generate with AI
+                      </>
+                    )}
+                  </button>
+                </div>
                 <textarea rows={2} value={expertNote} onChange={(e) => setExpertNote(e.target.value)} placeholder="Best for students who need a budget-friendly product for daily use..." className="w-full px-4 py-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-brand-200 dark:border-brand-900/50 focus:outline-none focus:ring-2 focus:ring-brand-500"></textarea>
               </div>
 

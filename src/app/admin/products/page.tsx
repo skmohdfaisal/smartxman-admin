@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { Plus, Search } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { getAdminSupabase } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { ProductRow } from "./ProductRow";
 
 export default async function AdminProducts() {
-  const { data: products } = await supabase
+  const supabaseServer = await getAdminSupabase();
+  const { data: products } = await supabaseServer
     .from('products')
     .select('*')
     .order('created_at', { ascending: false });
@@ -13,14 +14,16 @@ export default async function AdminProducts() {
   async function deleteProductAction(id: string) {
     "use server";
     if (!id) return;
-    await supabase.from('products').delete().eq('id', id);
+    const supabaseServer = await getAdminSupabase();
+    await supabaseServer.from('products').delete().eq('id', id);
     revalidatePath('/admin/products');
   }
 
   async function toggleProductStatusAction(id: string, isActive: boolean) {
     "use server";
     if (!id) return {};
-    const { error } = await supabase.from('products').update({ is_active: isActive }).eq('id', id);
+    const supabaseServer = await getAdminSupabase();
+    const { error } = await supabaseServer.from('products').update({ is_active: isActive }).eq('id', id);
     if (error) return { error: error.message };
     revalidatePath('/admin/products');
     revalidatePath('/products');
