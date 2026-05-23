@@ -456,6 +456,7 @@ export default function NewProduct() {
         smart_score: parseFloat(smartScore) || 0,
         value_score: parseFloat(valueScore) || 0,
         status: saveStatus,
+        approval_status: saveStatus,
         featured,
         trending,
         is_budget_pick: isBudgetPick,
