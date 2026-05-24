@@ -40,7 +40,7 @@ Generate the following JSON structure:
     
     const completion = await openai.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
-      model: "llama3-8b-8192", // Using an available Groq model
+      model: "llama-3.1-8b-instant", // Using an available Groq model
       response_format: { type: "json_object" }
     });
 
