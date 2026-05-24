@@ -28,6 +28,14 @@ Budget Tier: ${budget || 'Average'}
 
 Generate the following JSON structure:
 {
+  "brand": "The brand of the product",
+  "description": "A clear, factual, and engaging product description (approx 2 paragraphs)",
+  "price_range": "e.g., ₹1,995",
+  "rating": 4.5,
+  "audience": ["Students", "Gamers", "Creators", "Working Professionals"],
+  "use_case": ["Study", "Gaming", "Content Creation", "Productivity", "Desk Setup"],
+  "tags": ["wireless", "ergonomic", "productivity", "setup"],
+  "budget_range": ["Under ₹3000", "Value Picks"],
   "expert_note": "A 2-sentence punchy expert opinion on why to buy this",
   "pros": ["Pro 1", "Pro 2", "Pro 3"],
   "cons": ["Con 1", "Con 2"],
