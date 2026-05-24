@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Package, Search, Link as LinkIcon, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { Bot, Package, Search, Link as LinkIcon, AlertCircle, CheckCircle2, Loader2, Sparkles } from "lucide-react";
 import { extractAsin, searchAmazonProducts } from "../actions";
 import { supabase } from "@/lib/supabase";
 
 export default function ProductImporterPage() {
-  const [mode, setMode] = useState<"manual" | "api">("manual");
+  const [mode, setMode] = useState<"manual" | "ai">("manual");
   
   // Manual form state
   const [url, setUrl] = useState("");
@@ -17,8 +17,9 @@ export default function ProductImporterPage() {
   const [note, setNote] = useState("");
   const [tags, setTags] = useState("");
   
-  // API form state
-  const [keyword, setKeyword] = useState("");
+  // AI Auto-Import state
+  const [aiUrl, setAiUrl] = useState("");
+  const [aiTitle, setAiTitle] = useState("");
   
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error", text: string } | null>(null);
@@ -75,20 +76,68 @@ export default function ProductImporterPage() {
     }
   };
 
-  const handleApiImport = async (e: React.FormEvent) => {
+  const handleAiImport = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setMessage(null);
 
     try {
-      const response = await searchAmazonProducts(keyword);
-      if (!response.success) {
-        setMessage({ type: "error", text: response.error });
-      } else {
-        setMessage({ type: "success", text: "Products fetched! (Mock implementation)" });
+      const asin = await extractAsin(aiUrl);
+      if (!asin) {
+        setMessage({ type: "error", text: "Could not extract ASIN from URL. Please check the Amazon link." });
+        setLoading(false);
+        return;
       }
+
+      // Check auth for admin
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      setMessage({ type: "success", text: "Generating rich AI metadata..." });
+
+      // Call AI Enrich Endpoint
+      const res = await fetch("/api/ai/enrich-product", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: aiTitle })
+      });
+      
+      const enrichedData = await res.json();
+      if (!res.ok) throw new Error(enrichedData.error || "AI Enrichment failed.");
+
+      const baseSlug = aiTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      const slug = `${baseSlug}-${asin.toLowerCase()}`;
+
+      // Insert product as needs_review
+      const { data, error } = await supabase.from("products").insert([{
+        name: aiTitle,
+        slug,
+        asin,
+        affiliate_url: aiUrl,
+        source: 'amazon',
+        marketplace: 'www.amazon.in',
+        import_source: 'ai_auto',
+        approval_status: 'needs_review',
+        expert_note: enrichedData.expert_note,
+        pros: enrichedData.pros,
+        cons: enrichedData.cons,
+        buying_verdict: enrichedData.buying_verdict,
+        smart_score: enrichedData.smart_score,
+        value_score: enrichedData.value_score,
+        seo_title: enrichedData.seo_title,
+        seo_description: enrichedData.seo_description,
+      }]);
+
+      if (error) {
+        throw error;
+      }
+
+      setMessage({ type: "success", text: `Product fully enriched & imported! Sent to Review Queue.` });
+      setAiUrl(""); 
+      setAiTitle("");
     } catch (err: any) {
-      setMessage({ type: "error", text: err.message || "API request failed." });
+      console.error(err);
+      setMessage({ type: "error", text: err.message || "Failed to auto-import product." });
     } finally {
       setLoading(false);
     }
@@ -113,10 +162,10 @@ export default function ProductImporterPage() {
             Manual Link Import
           </button>
           <button 
-            onClick={() => setMode("api")}
-            className={`px-6 py-3 rounded-xl font-bold transition-all ${mode === "api" ? "bg-brand-600 text-white shadow-md shadow-brand-500/20" : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"}`}
+            onClick={() => setMode("ai")}
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${mode === "ai" ? "bg-gradient-to-r from-purple-600 to-brand-600 text-white shadow-md shadow-purple-500/20" : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"}`}
           >
-            Amazon PA-API Search
+            <Sparkles className="w-4 h-4" /> AI Auto-Import
           </button>
         </div>
 
@@ -223,26 +272,40 @@ export default function ProductImporterPage() {
             </button>
           </form>
         ) : (
-          <form onSubmit={handleApiImport} className="space-y-6">
-            <div className="p-6 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-2xl flex gap-4 text-amber-800 dark:text-amber-300">
-              <AlertCircle className="w-6 h-6 flex-shrink-0" />
+          <form onSubmit={handleAiImport} className="space-y-6">
+            <div className="p-6 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800/50 rounded-2xl flex gap-4 text-purple-800 dark:text-purple-300">
+              <Bot className="w-6 h-6 flex-shrink-0" />
               <div>
-                <h4 className="font-bold text-lg mb-1">API Integration</h4>
-                <p className="text-sm leading-relaxed">This mode requires valid Amazon PA-API credentials in your server environment variables (`AMAZON_ACCESS_KEY`, `AMAZON_SECRET_KEY`, `AMAZON_ASSOCIATE_TAG`). If they are missing, you will get an error.</p>
+                <h4 className="font-bold text-lg mb-1">Groq AI Enrichment</h4>
+                <p className="text-sm leading-relaxed">Provide the Amazon URL and the Product Name. Our AI will automatically generate expert notes, pros, cons, and smart scores, then send the product straight to your Import Review queue!</p>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Search Keyword on Amazon India</label>
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Amazon Product URL</label>
+                <div className="relative">
+                  <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input 
+                    type="url" 
+                    required
+                    value={aiUrl}
+                    onChange={(e) => setAiUrl(e.target.value)}
+                    placeholder="https://www.amazon.in/dp/BXXXXXXXXX"
+                    className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Product Name</label>
                 <input 
                   type="text" 
                   required
-                  value={keyword}
-                  onChange={(e) => setKeyword(e.target.value)}
-                  placeholder="e.g., Wireless Gaming Mouse"
-                  className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                  value={aiTitle}
+                  onChange={(e) => setAiTitle(e.target.value)}
+                  placeholder="e.g., Logitech MX Master 3S Wireless Mouse"
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none transition-all"
                 />
               </div>
             </div>
@@ -250,10 +313,10 @@ export default function ProductImporterPage() {
             <button 
               type="submit" 
               disabled={loading}
-              className="w-full py-4 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+              className="w-full py-4 bg-gradient-to-r from-purple-600 to-brand-600 hover:from-purple-700 hover:to-brand-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
             >
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
-              {loading ? "Searching..." : "Search Amazon"}
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
+              {loading ? "AI is generating details..." : "Auto-Enrich & Import to Review Queue"}
             </button>
           </form>
         )}
