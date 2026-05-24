@@ -899,12 +899,20 @@ export default function NewProduct() {
                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Quick Suggestions:</p>
                         <div className="flex flex-wrap gap-1.5">
                           {suggestions.map(s => {
-                            const isSelected = subCategory.toLowerCase().trim() === s.toLowerCase().trim();
+                            const currentList = subCategory.split(',').map(item => item.trim().toLowerCase()).filter(Boolean);
+                            const isSelected = currentList.includes(s.toLowerCase().trim());
                             return (
                               <button
                                 key={s}
                                 type="button"
-                                onClick={() => setSubCategory(s)}
+                                onClick={() => {
+                                  const list = subCategory.split(',').map(item => item.trim()).filter(Boolean);
+                                  if (list.map(i => i.toLowerCase()).includes(s.toLowerCase().trim())) {
+                                    setSubCategory(list.filter(item => item.toLowerCase() !== s.toLowerCase().trim()).join(', '));
+                                  } else {
+                                    setSubCategory([...list, s].join(', '));
+                                  }
+                                }}
                                 className={cn(
                                   "px-2 py-1 rounded-lg text-xs font-semibold border transition-all",
                                   isSelected 
