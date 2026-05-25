@@ -222,19 +222,17 @@ export default function AdminCategories() {
     try {
       const coreCategories = [
         { id: "c0000000-0000-0000-0000-000000000001", name: "Laptop Accessories", slug: "laptop-accessories", icon: "Laptop", description: "Essential gear for your laptop comfort and productivity" },
-        { id: "c0000000-0000-0000-0000-000000000002", name: "Desk Setup", slug: "desk-setup", icon: "Briefcase", description: "Ergonomics, organizers, and mats for a clean workspace" },
+        { id: "c0000000-0000-0000-0000-000000000002", name: "Desk Setup / Productivity", slug: "desk-setup-productivity", icon: "Briefcase", description: "Ergonomics, organizers, and mats for a clean workspace" },
         { id: "c0000000-0000-0000-0000-000000000003", name: "Tech Accessories", slug: "tech-accessories", icon: "MonitorSmartphone", description: "Essential daily tech items and accessories" },
-        { id: "c0000000-0000-0000-0000-000000000004", name: "Creator Gear", slug: "creator-gear", icon: "Video", description: "Microphones, tripods, lighting, and gear for creators" },
+        { id: "c0000000-0000-0000-0000-000000000004", name: "Creator Setup", slug: "creator-setup", icon: "Video", description: "Microphones, tripods, lighting, and gear for creators" },
         { id: "c0000000-0000-0000-0000-000000000005", name: "Mobile Accessories", slug: "mobile-accessories", icon: "Smartphone", description: "Power banks, chargers, cases, and phone holders" },
         { id: "c0000000-0000-0000-0000-000000000006", name: "Audio Gear", slug: "audio-gear", icon: "Headphones", description: "Headphones, earbuds, speakers, and audio gear" },
-        { id: "c0000000-0000-0000-0000-000000000007", name: "Gaming Accessories", slug: "gaming-accessories", icon: "Gamepad2", description: "Gaming keyboards, mice, headsets, and controllers" },
+        { id: "c0000000-0000-0000-0000-000000000007", name: "Gaming Setup", slug: "gaming-setup", icon: "Gamepad2", description: "Gaming keyboards, mice, headsets, and controllers" },
         { id: "c0000000-0000-0000-0000-000000000008", name: "Student Essentials", slug: "student-essentials", icon: "GraduationCap", description: "Dorm study essentials, bags, and budget accessories" },
-        { id: "c0000000-0000-0000-0000-000000000009", name: "Productivity Tools", slug: "productivity-tools", icon: "Zap", description: "Timers, organizers, keyboard shortcuts, and focus gear" },
         { id: "c0000000-0000-0000-0000-000000000010", name: "Work From Home", slug: "work-from-home", icon: "Home", description: "Ergonomics and connectivity for remote working professionals" },
         { id: "c0000000-0000-0000-0000-000000000011", name: "Home Office", slug: "home-office", icon: "Building", description: "Desk setups and furniture upgrades for your home office" },
-        { id: "c0000000-0000-0000-0000-000000000012", name: "Smart Gadgets", slug: "smart-gadgets", icon: "Cpu", description: "Smart home assistants, plugs, bulbs, and displays" },
+        { id: "c0000000-0000-0000-0000-000000000012", name: "Smart Gadgets / Lifestyle", slug: "smart-gadgets-lifestyle", icon: "Cpu", description: "Smart home assistants, plugs, bulbs, and displays" },
         { id: "c0000000-0000-0000-0000-000000000013", name: "Travel Tech", slug: "travel-tech", icon: "Compass", description: "Travel adapters, portable chargers, and tech organizers" },
-        { id: "c0000000-0000-0000-0000-000000000014", name: "Lifestyle Gear", slug: "lifestyle-gear", icon: "Sparkles", description: "Daily gadgets, personal care items, and smart bottles" },
         { id: "c0000000-0000-0000-0000-000000000015", name: "Budget Finds", slug: "budget-finds", icon: "DollarSign", description: "High value products and accessories under ₹1000" },
         { id: "c0000000-0000-0000-0000-000000000016", name: "Daily Use Products", slug: "daily-use-products", icon: "Heart", description: "Everyday carry items, keychains, and cleaning products" }
       ];
@@ -259,16 +257,23 @@ export default function AdminCategories() {
         finalCats = [...finalCats, ...inserted];
       }
 
-      // Safe migration/remapping of older categories Gaming/Youtuber
-      const weakSlugs = ["gaming", "youtuber", "gaming-setup", "creator-setup"];
+      // Safe migration/remapping of older categories
+      const weakSlugs = ["gaming", "youtuber", "gaming-accessories", "creator-gear", "desk-setup", "productivity-tools", "smart-gadgets", "lifestyle-gear"];
       const oldCats = finalCats.filter(ec => weakSlugs.includes(ec.slug));
       
       if (oldCats.length > 0) {
-        const gamingAccId = finalCats.find(c => c.slug === 'gaming-accessories')?.id;
-        const creatorGearId = finalCats.find(c => c.slug === 'creator-gear')?.id;
+        const gamingAccId = finalCats.find(c => c.slug === 'gaming-setup')?.id;
+        const creatorGearId = finalCats.find(c => c.slug === 'creator-setup')?.id;
+        const deskSetupId = finalCats.find(c => c.slug === 'desk-setup-productivity')?.id;
+        const smartGadgetsId = finalCats.find(c => c.slug === 'smart-gadgets-lifestyle')?.id;
         
         for (const oldCat of oldCats) {
-          const newId = oldCat.slug.includes("gaming") ? gamingAccId : creatorGearId;
+          let newId = null;
+          if (oldCat.slug.includes("gaming")) newId = gamingAccId;
+          else if (oldCat.slug.includes("creator") || oldCat.slug.includes("youtuber")) newId = creatorGearId;
+          else if (oldCat.slug.includes("desk-setup") || oldCat.slug.includes("productivity")) newId = deskSetupId;
+          else if (oldCat.slug.includes("smart") || oldCat.slug.includes("lifestyle")) newId = smartGadgetsId;
+          
           if (newId) {
             await supabase.from('products').update({ primary_category_id: newId }).eq('primary_category_id', oldCat.id);
             await supabase.from('product_categories').update({ category_id: newId }).eq('category_id', oldCat.id);

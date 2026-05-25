@@ -36,20 +36,18 @@ import { useRouter } from "next/navigation";
 
 const subCategorySuggestions: Record<string, string[]> = {
   "Laptop Accessories": ["Laptop Stand", "Cooling Pad", "Laptop Sleeve", "USB Hub", "Keyboard", "Mouse", "Webcam", "Laptop Cleaning Kit", "Charger", "Monitor Stand"],
-  "Desk Setup": ["Desk Mat", "Laptop Stand", "Monitor Stand", "Cable Organizer", "Desk Lamp", "Phone Stand", "Keyboard", "Mouse", "Chair Accessories", "Storage Organizer"],
-  "Creator Gear": ["Microphone", "Ring Light", "Tripod", "Webcam", "Phone Holder", "Studio Light", "Background Stand", "Camera Accessories", "Editing Accessories"],
+  "Desk Setup / Productivity": ["Desk Mat", "Laptop Stand", "Monitor Stand", "Cable Organizer", "Desk Lamp", "Phone Stand", "Keyboard", "Mouse", "Chair Accessories", "Storage Organizer", "Desk Timer", "Planner", "Whiteboard"],
+  "Creator Setup": ["Collar Mic", "USB Condenser Mic", "Ring Light", "Tripod", "Mobile Holder", "Phone Gimbal", "RGB Light", "Background Stand", "Camera Accessories"],
   "Mobile Accessories": ["Phone Stand", "Power Bank", "Charger", "Cable", "Earbuds", "Mobile Holder", "Screen Protector", "Back Cover", "Car Charger"],
   "Audio Gear": ["Earbuds", "Headphones", "Microphone", "Speaker", "Soundbar", "Audio Interface", "Lavalier Mic", "Wireless Mic"],
-  "Gaming Accessories": ["Gaming Mouse", "Gaming Keyboard", "Headset", "Controller", "Mouse Pad", "Cooling Pad", "Gaming Chair Accessories"],
-  "Student Essentials": ["Laptop Stand", "Notebook Accessories", "Study Lamp", "Backpack", "Power Bank", "Earbuds", "Desk Organizer"],
-  "Productivity Tools": ["Keyboard", "Mouse", "Desk Timer", "Planner", "Desk Organizer", "Monitor Stand", "Laptop Stand"],
+  "Gaming Setup": ["Gaming Mouse", "Gaming Keyboard", "Large Mouse Pad", "Gaming Headphones", "Controller", "Cooling Pad", "Gaming Chair Accessories"],
+  "Student Essentials": ["Laptop Stand", "Wireless Mouse", "Keyboard + Mouse Combo", "USB Hub", "Laptop Sleeve", "Study Table", "Desk Lamp", "Extension Board"],
   "Work From Home": ["Webcam", "Microphone", "Laptop Stand", "Keyboard", "Mouse", "Desk Lamp", "Chair Accessories", "WiFi Router"],
+  "Home Office": ["Ergonomic Chair", "Desk Lamp", "Monitor Arm", "Cable Management", "Footrest"],
+  "Smart Gadgets / Lifestyle": ["Smart Plug", "Bluetooth Speaker", "Power Bank", "Smart Bulb", "Sensor", "Voice Assistant", "Smart Display", "Smart Bottle", "Mini Fan", "Organizer"],
   "Travel Tech": ["Power Bank", "Travel Adapter", "Cable Organizer", "Earbuds", "Backpack Tech Organizer", "Portable Charger"],
-  "Lifestyle Gear": ["Smart Bottle", "Mini Fan", "Organizer", "Daily Use Gadget", "Personal Care Gadget"],
   "Budget Finds": ["Under ₹500", "Under ₹1000", "Under ₹3000", "Value Picks", "Best Deals"],
   "Tech Accessories": ["Laptop Stand", "Wireless Mouse", "Keyboard", "Microphone", "Lighting", "Headphones", "Desk Mat", "Phone Stand", "Power Bank", "USB Hub", "Webcam", "Monitor Arm"],
-  "Home Office": ["Ergonomic Chair", "Desk Lamp", "Monitor Arm", "Cable Management", "Footrest"],
-  "Smart Gadgets": ["Smart Plug", "Smart Bulb", "Sensor", "Voice Assistant", "Smart Display"],
   "Daily Use Products": ["Tumbler", "Organizer", "Keychain", "Cleaning Gel", "Desk Toy"]
 };
 
@@ -96,6 +94,7 @@ export default function NewProduct() {
   const [budgetRange, setBudgetRange] = useState<string[]>([]);
   const [tags, setTags] = useState("");
   const [dbCategories, setDbCategories] = useState<any[]>([]);
+  const [mainCategorySearch, setMainCategorySearch] = useState("");
 
   // States: Recommendations
   const [expertNote, setExpertNote] = useState(""); // Short Buying Advice
@@ -114,6 +113,7 @@ export default function NewProduct() {
   const [isBudgetPick, setIsBudgetPick] = useState(false); // Budget Pick
   const [isBestDeal, setIsBestDeal] = useState(false); // Best Deal
   const [showInDeals, setShowInDeals] = useState(false); // Show in Deals Section
+  const [isBestSelling, setIsBestSelling] = useState(false); // Best Selling
   const [status, setStatus] = useState("draft"); // Publish Status: draft, needs_review, published, archived
   const [seoTitle, setSeoTitle] = useState("");
   const [seoDescription, setSeoDescription] = useState("");
@@ -129,25 +129,24 @@ export default function NewProduct() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isGeneratingAiNote, setIsGeneratingAiNote] = useState(false);
+  const [isSuggestingCategories, setIsSuggestingCategories] = useState(false);
 
   // Load Curated Categories & Auto-seed dynamically from browser if missing
   useEffect(() => {
     async function fetchAndSeedCategories() {
       const coreCategories = [
         { id: "c0000000-0000-0000-0000-000000000001", name: "Laptop Accessories", slug: "laptop-accessories", icon: "Laptop", description: "Essential gear for your laptop comfort and productivity" },
-        { id: "c0000000-0000-0000-0000-000000000002", name: "Desk Setup", slug: "desk-setup", icon: "Briefcase", description: "Ergonomics, organizers, and mats for a clean workspace" },
+        { id: "c0000000-0000-0000-0000-000000000002", name: "Desk Setup / Productivity", slug: "desk-setup-productivity", icon: "Briefcase", description: "Ergonomics, organizers, and mats for a clean workspace" },
         { id: "c0000000-0000-0000-0000-000000000003", name: "Tech Accessories", slug: "tech-accessories", icon: "MonitorSmartphone", description: "Essential daily tech items and accessories" },
-        { id: "c0000000-0000-0000-0000-000000000004", name: "Creator Gear", slug: "creator-gear", icon: "Video", description: "Microphones, tripods, lighting, and gear for creators" },
+        { id: "c0000000-0000-0000-0000-000000000004", name: "Creator Setup", slug: "creator-setup", icon: "Video", description: "Microphones, tripods, lighting, and gear for creators" },
         { id: "c0000000-0000-0000-0000-000000000005", name: "Mobile Accessories", slug: "mobile-accessories", icon: "Smartphone", description: "Power banks, chargers, cases, and phone holders" },
         { id: "c0000000-0000-0000-0000-000000000006", name: "Audio Gear", slug: "audio-gear", icon: "Headphones", description: "Headphones, earbuds, speakers, and audio gear" },
-        { id: "c0000000-0000-0000-0000-000000000007", name: "Gaming Accessories", slug: "gaming-accessories", icon: "Gamepad2", description: "Gaming keyboards, mice, headsets, and controllers" },
+        { id: "c0000000-0000-0000-0000-000000000007", name: "Gaming Setup", slug: "gaming-setup", icon: "Gamepad2", description: "Gaming keyboards, mice, headsets, and controllers" },
         { id: "c0000000-0000-0000-0000-000000000008", name: "Student Essentials", slug: "student-essentials", icon: "GraduationCap", description: "Dorm study essentials, bags, and budget accessories" },
-        { id: "c0000000-0000-0000-0000-000000000009", name: "Productivity Tools", slug: "productivity-tools", icon: "Zap", description: "Timers, organizers, keyboard shortcuts, and focus gear" },
         { id: "c0000000-0000-0000-0000-000000000010", name: "Work From Home", slug: "work-from-home", icon: "Home", description: "Ergonomics and connectivity for remote working professionals" },
         { id: "c0000000-0000-0000-0000-000000000011", name: "Home Office", slug: "home-office", icon: "Building", description: "Desk setups and furniture upgrades for your home office" },
-        { id: "c0000000-0000-0000-0000-000000000012", name: "Smart Gadgets", slug: "smart-gadgets", icon: "Cpu", description: "Smart home assistants, plugs, bulbs, and displays" },
+        { id: "c0000000-0000-0000-0000-000000000012", name: "Smart Gadgets / Lifestyle", slug: "smart-gadgets-lifestyle", icon: "Cpu", description: "Smart home assistants, plugs, bulbs, and displays" },
         { id: "c0000000-0000-0000-0000-000000000013", name: "Travel Tech", slug: "travel-tech", icon: "Compass", description: "Travel adapters, portable chargers, and tech organizers" },
-        { id: "c0000000-0000-0000-0000-000000000014", name: "Lifestyle Gear", slug: "lifestyle-gear", icon: "Sparkles", description: "Daily gadgets, personal care items, and smart bottles" },
         { id: "c0000000-0000-0000-0000-000000000015", name: "Budget Finds", slug: "budget-finds", icon: "DollarSign", description: "High value products and accessories under ₹1000" },
         { id: "c0000000-0000-0000-0000-000000000016", name: "Daily Use Products", slug: "daily-use-products", icon: "Heart", description: "Everyday carry items, keychains, and cleaning products" }
       ];
@@ -190,16 +189,23 @@ export default function NewProduct() {
             }
           }
 
-          // Clean up legacy categories ('Gaming', 'Youtuber')
-          const weakSlugs = ["gaming", "youtuber", "gaming-setup", "creator-setup"];
+          // Clean up legacy categories
+          const weakSlugs = ["gaming", "youtuber", "gaming-accessories", "creator-gear", "desk-setup", "productivity-tools", "smart-gadgets", "lifestyle-gear"];
           const oldCatsToDelete = finalCats.filter(ec => weakSlugs.includes(ec.slug));
           
           if (oldCatsToDelete.length > 0) {
-            const gamingAccId = finalCats.find(c => c.slug === 'gaming-accessories')?.id;
-            const creatorGearId = finalCats.find(c => c.slug === 'creator-gear')?.id;
+            const gamingAccId = finalCats.find(c => c.slug === 'gaming-setup')?.id;
+            const creatorGearId = finalCats.find(c => c.slug === 'creator-setup')?.id;
+            const deskSetupId = finalCats.find(c => c.slug === 'desk-setup-productivity')?.id;
+            const smartGadgetsId = finalCats.find(c => c.slug === 'smart-gadgets-lifestyle')?.id;
             
             for (const oldCat of oldCatsToDelete) {
-              const newId = oldCat.slug.includes("gaming") ? gamingAccId : creatorGearId;
+              let newId = null;
+              if (oldCat.slug.includes("gaming")) newId = gamingAccId;
+              else if (oldCat.slug.includes("creator") || oldCat.slug.includes("youtuber")) newId = creatorGearId;
+              else if (oldCat.slug.includes("desk-setup") || oldCat.slug.includes("productivity")) newId = deskSetupId;
+              else if (oldCat.slug.includes("smart") || oldCat.slug.includes("lifestyle")) newId = smartGadgetsId;
+
               if (newId) {
                 // Remap products to prevent foreign key errors
                 await supabase.from('products').update({ primary_category_id: newId }).eq('primary_category_id', oldCat.id);
@@ -406,6 +412,34 @@ export default function NewProduct() {
   const completedChecks = healthChecklist.filter(item => item.checked).length;
   const healthPercent = Math.round((completedChecks / healthChecklist.length) * 100);
 
+  const handleSuggestCategories = async () => {
+    if (!name) return;
+    setIsSuggestingCategories(true);
+    try {
+      const res = await fetch("/api/ai/suggest-categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, description })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      if (data.mainCategories && data.mainCategories.length > 0) {
+        const matchedCats = dbCategories.filter(c => data.mainCategories.includes(c.name)).map(c => c.id);
+        if (matchedCats.length > 0) {
+          setCategory(matchedCats);
+        }
+      }
+      if (data.subCategories && data.subCategories.length > 0) {
+        setSubCategory(data.subCategories.join(", "));
+      }
+    } catch (error: any) {
+      console.error("AI Generation error:", error);
+      alert(`AI Category Suggestion failed: ${error.message}`);
+    } finally {
+      setIsSuggestingCategories(false);
+    }
+  };
+
   // Handlers: Save/Publish
   const handleSave = async (overrideStatus?: string) => {
     setSaveError(null);
@@ -446,7 +480,7 @@ export default function NewProduct() {
         audience,
         budget_range: budgetRange,
         use_case: useCase,
-        tags: tags.split(',').map(t => t.trim()).filter(t => t),
+        tags: [...tags.split(',').map(t => t.trim()).filter(t => t), ...(isBestSelling ? ['Best Selling'] : [])],
         best_for: bestFor,
         who_should_buy: whoShouldBuy,
         who_should_avoid: whoShouldAvoid,
@@ -846,10 +880,29 @@ export default function NewProduct() {
 
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Main Categories (Select Multiple) <span className="text-brand-500">*</span></label>
+                  <div className="flex items-center justify-between">
+                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Main Categories (Select Multiple) <span className="text-brand-500">*</span></label>
+                    <button
+                      type="button"
+                      onClick={handleSuggestCategories}
+                      disabled={isSuggestingCategories || !name}
+                      className="text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-350 text-xs font-black flex items-center gap-1 transition-colors disabled:opacity-45 disabled:cursor-not-allowed"
+                    >
+                      {isSuggestingCategories ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 animate-pulse" />}
+                      {isSuggestingCategories ? "Suggesting..." : "Auto-Suggest Categories"}
+                    </button>
+                  </div>
                   {dbCategories.length > 0 ? (
-                    <div className="flex flex-wrap gap-2 p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-800">
-                      {dbCategories.map(cat => {
+                    <div className="space-y-3">
+                      <input 
+                        type="text" 
+                        value={mainCategorySearch} 
+                        onChange={(e) => setMainCategorySearch(e.target.value)} 
+                        placeholder="Search main categories..." 
+                        className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm font-semibold" 
+                      />
+                      <div className="flex flex-wrap gap-2 p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-800 max-h-48 overflow-y-auto scrollbar-thin">
+                        {dbCategories.filter(c => c.name.toLowerCase().includes(mainCategorySearch.toLowerCase())).map(cat => {
                         const isSelected = category.includes(cat.id);
                         return (
                           <button
@@ -874,6 +927,7 @@ export default function NewProduct() {
                           </button>
                         );
                       })}
+                      </div>
                     </div>
                   ) : (
                     <div className="p-4 text-center text-slate-400 font-bold bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-800">
@@ -898,7 +952,10 @@ export default function NewProduct() {
                       <div className="mt-2 space-y-1">
                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Quick Suggestions:</p>
                         <div className="flex flex-wrap gap-1.5">
-                          {suggestions.map(s => {
+                          {suggestions.filter(s => {
+                            const term = subCategory.split(',').pop()?.trim().toLowerCase() || "";
+                            return s.toLowerCase().includes(term);
+                          }).map(s => {
                             const currentList = subCategory.split(',').map(item => item.trim().toLowerCase()).filter(Boolean);
                             const isSelected = currentList.includes(s.toLowerCase().trim());
                             return (
@@ -1281,6 +1338,19 @@ export default function NewProduct() {
                         type="checkbox" 
                         checked={showInDeals} 
                         onChange={(e) => setShowInDeals(e.target.checked)} 
+                        className="w-9 h-5 rounded-full bg-slate-200 dark:bg-slate-700 checked:bg-brand-500 cursor-pointer appearance-none relative before:content-[''] before:absolute before:w-4 before:h-4 before:rounded-full before:bg-white before:top-0.5 before:left-0.5 checked:before:translate-x-4 before:transition-all shadow-inner border border-transparent" 
+                      />
+                    </label>
+
+                    <label className="flex items-center justify-between p-3 bg-brand-50/50 dark:bg-brand-900/20 rounded-xl border border-brand-200/60 dark:border-brand-800/60 cursor-pointer transition-all hover:bg-brand-50 dark:hover:bg-brand-900/30">
+                      <div>
+                        <p className="text-sm font-bold text-brand-700 dark:text-brand-300">Best Selling Product</p>
+                        <p className="text-[10px] text-brand-600/70 dark:text-brand-400/70 font-medium">Auto-adds "Best Selling" tag to lists</p>
+                      </div>
+                      <input 
+                        type="checkbox" 
+                        checked={isBestSelling} 
+                        onChange={(e) => setIsBestSelling(e.target.checked)} 
                         className="w-9 h-5 rounded-full bg-slate-200 dark:bg-slate-700 checked:bg-brand-500 cursor-pointer appearance-none relative before:content-[''] before:absolute before:w-4 before:h-4 before:rounded-full before:bg-white before:top-0.5 before:left-0.5 checked:before:translate-x-4 before:transition-all shadow-inner border border-transparent" 
                       />
                     </label>
