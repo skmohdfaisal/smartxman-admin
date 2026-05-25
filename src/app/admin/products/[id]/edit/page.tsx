@@ -124,6 +124,7 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
 
   // States: Images
   const [images, setImages] = useState<string[]>([]);
+  const [newImageUrl, setNewImageUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -456,9 +457,24 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
     newImgs.unshift(selected);
     setImages(newImgs);
   };
-  const handleUrlChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const urls = e.target.value.split('\n').filter(url => url.trim() !== '');
-    setImages(urls);
+  
+  const handleAddImageUrl = () => {
+    if (newImageUrl.trim() && isValidUrl(newImageUrl.trim())) {
+      setImages(prev => [...prev, newImageUrl.trim()]);
+      setNewImageUrl("");
+    }
+  };
+
+  const moveImage = (index: number, direction: 'left' | 'right') => {
+    setImages(prev => {
+      const newImgs = [...prev];
+      if (direction === 'left' && index > 0) {
+        [newImgs[index - 1], newImgs[index]] = [newImgs[index], newImgs[index - 1]];
+      } else if (direction === 'right' && index < newImgs.length - 1) {
+        [newImgs[index + 1], newImgs[index]] = [newImgs[index], newImgs[index + 1]];
+      }
+      return newImgs;
+    });
   };
 
   // Calculate Product Health Score
@@ -871,14 +887,25 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                   <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Product Images</label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Raw Image URLs (One per line)</p>
-                      <textarea 
-                        rows={4} 
-                        value={images.join('\n')} 
-                        onChange={handleUrlChange} 
-                        placeholder="https://amazon.com/image1.jpg&#10;https://amazon.com/image2.jpg" 
-                        className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 font-mono text-xs"
-                      />
+                      <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Add Image from URL</p>
+                      <div className="flex flex-col gap-2">
+                        <input 
+                          type="text" 
+                          value={newImageUrl} 
+                          onChange={(e) => setNewImageUrl(e.target.value)} 
+                          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddImageUrl(); } }}
+                          placeholder="https://amazon.com/image.jpg" 
+                          className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 font-mono text-xs"
+                        />
+                        <button 
+                          type="button" 
+                          onClick={handleAddImageUrl}
+                          disabled={!newImageUrl.trim()}
+                          className="px-4 py-3 bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-white dark:text-slate-900 rounded-xl font-bold transition-all text-sm disabled:opacity-50"
+                        >
+                          Add Image URL
+                        </button>
+                      </div>
                     </div>
                     
                     <div className="flex flex-col justify-between">
@@ -902,7 +929,12 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                         {images.filter(isValidUrl).map((url, idx) => (
                           <div key={idx} className={cn("aspect-square bg-slate-50 dark:bg-slate-800/50 rounded-xl border overflow-hidden relative group", idx === 0 ? "border-brand-500 ring-2 ring-brand-500/10" : "border-slate-200 dark:border-slate-800")}>
                             <img src={url} alt={`Preview ${idx}`} className="w-full h-full object-cover" />
-                            <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-1.5">
+                            <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-1.5 flex-wrap p-2">
+                              {idx > 0 && (
+                                <button type="button" onClick={(e) => { e.stopPropagation(); moveImage(idx, 'left'); }} className="p-1 bg-white hover:bg-slate-50 text-slate-900 rounded-lg shadow-sm transition-all" title="Move left">
+                                  <ChevronLeft className="w-3.5 h-3.5" />
+                                </button>
+                              )}
                               {idx !== 0 && (
                                 <button type="button" onClick={() => setAsThumbnail(idx)} className="p-1 bg-white hover:bg-brand-50 text-slate-900 rounded-lg shadow-sm transition-all" title="Set as thumbnail">
                                   <Trophy className="w-3.5 h-3.5 text-brand-600" />
@@ -911,6 +943,11 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                               <button type="button" onClick={() => removeImage(idx)} className="p-1 bg-white hover:bg-red-50 text-red-600 rounded-lg shadow-sm transition-all" title="Remove image">
                                 <X className="w-3.5 h-3.5" />
                               </button>
+                              {idx < images.length - 1 && (
+                                <button type="button" onClick={(e) => { e.stopPropagation(); moveImage(idx, 'right'); }} className="p-1 bg-white hover:bg-slate-50 text-slate-900 rounded-lg shadow-sm transition-all" title="Move right">
+                                  <ChevronRight className="w-3.5 h-3.5" />
+                                </button>
+                              )}
                             </div>
                             {idx === 0 && <span className="absolute bottom-1 right-1 bg-brand-500 text-white font-black uppercase text-[8px] px-1 py-0.5 rounded shadow-sm">Main</span>}
                           </div>
