@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     
     const prompt = `Based on the following product name and description, recommend up to 2 Main Categories and up to 5 Sub Categories for an e-commerce website.
     
-Available Main Categories: "Laptop Accessories", "Desk Setup / Productivity", "Tech Accessories", "Creator Setup", "Mobile Accessories", "Audio Gear", "Gaming Setup", "Student Essentials", "Work From Home", "Home Office", "Smart Gadgets / Lifestyle", "Travel Tech", "Budget Finds", "Daily Use Products"
+Available Main Categories: "Laptops", "Smartphones", "Headphones & Earbuds", "Smartwatches & Wearables", "Computer Components & Storage", "Laptop Accessories", "Desk Setup / Productivity", "Tech Accessories", "Creator Setup", "Mobile Accessories", "Audio Gear", "Gaming Setup", "Student Essentials", "Work From Home", "Home Office", "Smart Gadgets / Lifestyle", "Travel Tech", "Budget Finds", "Daily Use Products"
 
 Product Name: ${name}
 Description: ${(description || "").substring(0, 2000)}

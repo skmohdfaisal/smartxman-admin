@@ -221,6 +221,11 @@ export default function AdminCategories() {
     setIsAdding(true);
     try {
       const coreCategories = [
+        { id: "c0000000-0000-0000-0000-000000000021", name: "Laptops", slug: "laptops", icon: "Laptop", description: "Top-rated work, gaming, and student laptops" },
+        { id: "c0000000-0000-0000-0000-000000000022", name: "Smartphones", slug: "smartphones", icon: "Smartphone", description: "High-performance smartphones and mobile devices" },
+        { id: "c0000000-0000-0000-0000-000000000023", name: "Headphones & Earbuds", slug: "headphones-earbuds", icon: "Headphones", description: "Premium wireless earbuds and over-ear headphones" },
+        { id: "c0000000-0000-0000-0000-000000000024", name: "Smartwatches & Wearables", slug: "smartwatches-wearables", icon: "Watch", description: "Fitness trackers, smartwatches, and active wearables" },
+        { id: "c0000000-0000-0000-0000-000000000025", name: "Computer Components & Storage", slug: "computer-components-storage", icon: "Cpu", description: "SSDs, external hard drives, RAM, and internal upgrades" },
         { id: "c0000000-0000-0000-0000-000000000001", name: "Laptop Accessories", slug: "laptop-accessories", icon: "Laptop", description: "Essential gear for your laptop comfort and productivity" },
         { id: "c0000000-0000-0000-0000-000000000002", name: "Desk Setup / Productivity", slug: "desk-setup-productivity", icon: "Briefcase", description: "Ergonomics, organizers, and mats for a clean workspace" },
         { id: "c0000000-0000-0000-0000-000000000003", name: "Tech Accessories", slug: "tech-accessories", icon: "MonitorSmartphone", description: "Essential daily tech items and accessories" },
@@ -329,7 +334,7 @@ export default function AdminCategories() {
           className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 shadow-md shadow-brand-500/25"
         >
           {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-          Sync Core 16 Categories
+          Sync Core 19 Categories
         </button>
       </div>
 

@@ -35,6 +35,11 @@ import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
 const subCategorySuggestions: Record<string, string[]> = {
+  "Laptops": ["Gaming Laptop", "Thin & Light", "Business Laptop", "Student Laptop", "MacBook", "Ultrabook", "2-in-1 Laptop", "Chromebook"],
+  "Smartphones": ["Flagship Phone", "Budget Smartphone", "Mid-Range Phone", "Gaming Phone", "iPhone", "Android Phone", "Foldable Phone"],
+  "Headphones & Earbuds": ["True Wireless Earbuds", "Active Noise Cancelling (ANC)", "Over-Ear Headphones", "On-Ear Headphones", "Sports Earbuds", "Audiophile Headphones", "In-Ear Monitors (IEMs)"],
+  "Smartwatches & Wearables": ["Smartwatch", "Fitness Tracker", "Sports Watch", "Hybrid Smartwatch", "Smart Ring"],
+  "Computer Components & Storage": ["M.2 NVMe SSD", "Portable SSD", "External Hard Drive", "MicroSD Card", "RAM Module", "Graphics Card", "Internal Upgrade"],
   "Laptop Accessories": ["Laptop Stand", "Cooling Pad", "Laptop Sleeve", "USB Hub", "Keyboard", "Mouse", "Webcam", "Laptop Cleaning Kit", "Charger", "Monitor Stand"],
   "Desk Setup / Productivity": ["Desk Mat", "Laptop Stand", "Monitor Stand", "Cable Organizer", "Desk Lamp", "Phone Stand", "Keyboard", "Mouse", "Chair Accessories", "Storage Organizer", "Desk Timer", "Planner", "Whiteboard"],
   "Creator Setup": ["Collar Mic", "USB Condenser Mic", "Ring Light", "Tripod", "Mobile Holder", "Phone Gimbal", "RGB Light", "Background Stand", "Camera Accessories"],
@@ -139,6 +144,11 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
   useEffect(() => {
     async function fetchAndSeedCategories() {
       const coreCategories = [
+        { id: "c0000000-0000-0000-0000-000000000021", name: "Laptops", slug: "laptops", icon: "Laptop", description: "Top-rated work, gaming, and student laptops" },
+        { id: "c0000000-0000-0000-0000-000000000022", name: "Smartphones", slug: "smartphones", icon: "Smartphone", description: "High-performance smartphones and mobile devices" },
+        { id: "c0000000-0000-0000-0000-000000000023", name: "Headphones & Earbuds", slug: "headphones-earbuds", icon: "Headphones", description: "Premium wireless earbuds and over-ear headphones" },
+        { id: "c0000000-0000-0000-0000-000000000024", name: "Smartwatches & Wearables", slug: "smartwatches-wearables", icon: "Watch", description: "Fitness trackers, smartwatches, and active wearables" },
+        { id: "c0000000-0000-0000-0000-000000000025", name: "Computer Components & Storage", slug: "computer-components-storage", icon: "Cpu", description: "SSDs, external hard drives, RAM, and internal upgrades" },
         { id: "c0000000-0000-0000-0000-000000000001", name: "Laptop Accessories", slug: "laptop-accessories", icon: "Laptop", description: "Essential gear for your laptop comfort and productivity" },
         { id: "c0000000-0000-0000-0000-000000000002", name: "Desk Setup / Productivity", slug: "desk-setup-productivity", icon: "Briefcase", description: "Ergonomics, organizers, and mats for a clean workspace" },
         { id: "c0000000-0000-0000-0000-000000000003", name: "Tech Accessories", slug: "tech-accessories", icon: "MonitorSmartphone", description: "Essential daily tech items and accessories" },
