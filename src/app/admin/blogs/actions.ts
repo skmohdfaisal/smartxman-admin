@@ -23,6 +23,17 @@ function readLocalBlogs(): any[] {
 function writeLocalBlogs(blogs: any[]): boolean {
   try {
     fs.writeFileSync(JSON_DB_PATH, JSON.stringify(blogs, null, 2), "utf-8");
+    
+    // Also write to sibling path for public app to remain completely synchronized
+    try {
+      const siblingPath = path.resolve(process.cwd(), "../smartxman/src/lib/blogs_db.json");
+      if (fs.existsSync(path.dirname(siblingPath))) {
+        fs.writeFileSync(siblingPath, JSON.stringify(blogs, null, 2), "utf-8");
+      }
+    } catch (siblingErr) {
+      console.warn("Failed to write to sibling blog JSON database:", siblingErr);
+    }
+    
     return true;
   } catch (err) {
     console.error("Failed to write local blogs fallback:", err);
@@ -137,23 +148,50 @@ export async function saveBlog(blogData: any) {
   }
 
   // Ensure cover_image fallback
-  if (!blogData.cover_image) {
-    blogData.cover_image = "/categories/tech.png";
-  }
+  const finalCoverImage = blogData.cover_image_url || blogData.cover_image || "/categories/tech.png";
 
   try {
     const isNew = !blogData.id;
-    const payload = {
+    const payload: any = {
       title: blogData.title,
       slug: blogData.slug,
-      cover_image: blogData.cover_image,
+      cover_image_url: finalCoverImage,
+      cover_image: finalCoverImage, // compatibility legacy alias
+      cover_image_alt: blogData.cover_image_alt || "",
+      cover_image_caption: blogData.cover_image_caption || "",
       content: blogData.content,
-      category: blogData.category || "General",
+      category: blogData.category || "Buying Guides",
       excerpt: blogData.excerpt || "",
       read_time: blogData.read_time || "5 min read",
-      reference_links: blogData.reference_links || [],
-      status: blogData.status || "published",
+      author: blogData.author || "Admin",
+      tags: blogData.tags || [],
+      status: blogData.status || "draft",
+      visibility: blogData.visibility || "public",
+      featured: !!blogData.featured,
+      show_on_homepage: !!blogData.show_on_homepage,
+      seo_title: blogData.seo_title || "",
+      seo_description: blogData.seo_description || "",
+      canonical_url: blogData.canonical_url || "",
+      og_title: blogData.og_title || "",
+      og_description: blogData.og_description || "",
+      og_image: blogData.og_image || "",
+      focus_keyword: blogData.focus_keyword || "",
+      noindex: !!blogData.noindex,
+      faqs: blogData.faqs || [],
+      product_blocks: blogData.product_blocks || [],
+      reference_links: blogData.reference_links || [], // legacy
+      updated_at: new Date().toISOString()
     };
+
+    if (isNew) {
+      payload.created_at = new Date().toISOString();
+    }
+    
+    if (blogData.status === "published") {
+      payload.published_at = blogData.published_at || new Date().toISOString();
+    } else {
+      payload.published_at = blogData.published_at || null;
+    }
 
     let result;
     if (isNew) {
@@ -174,7 +212,6 @@ export async function saveBlog(blogData: any) {
           const newBlog = {
             ...payload,
             id: String(local.length + 1),
-            created_at: new Date().toISOString(),
           };
           local.push(newBlog);
           writeLocalBlogs(local);
@@ -201,23 +238,51 @@ export async function saveBlog(blogData: any) {
     console.error("Save blog operation failed, falling back to local:", err.message);
     const local = readLocalBlogs();
     const isNew = !blogData.id;
-    const payload = {
+    const payload: any = {
       title: blogData.title,
       slug: blogData.slug,
-      cover_image: blogData.cover_image,
+      cover_image_url: finalCoverImage,
+      cover_image: finalCoverImage,
+      cover_image_alt: blogData.cover_image_alt || "",
+      cover_image_caption: blogData.cover_image_caption || "",
       content: blogData.content,
-      category: blogData.category || "General",
+      category: blogData.category || "Buying Guides",
       excerpt: blogData.excerpt || "",
       read_time: blogData.read_time || "5 min read",
+      author: blogData.author || "Admin",
+      tags: blogData.tags || [],
+      status: blogData.status || "draft",
+      visibility: blogData.visibility || "public",
+      featured: !!blogData.featured,
+      show_on_homepage: !!blogData.show_on_homepage,
+      seo_title: blogData.seo_title || "",
+      seo_description: blogData.seo_description || "",
+      canonical_url: blogData.canonical_url || "",
+      og_title: blogData.og_title || "",
+      og_description: blogData.og_description || "",
+      og_image: blogData.og_image || "",
+      focus_keyword: blogData.focus_keyword || "",
+      noindex: !!blogData.noindex,
+      faqs: blogData.faqs || [],
+      product_blocks: blogData.product_blocks || [],
       reference_links: blogData.reference_links || [],
-      status: blogData.status || "published",
+      updated_at: new Date().toISOString()
     };
+
+    if (isNew) {
+      payload.created_at = new Date().toISOString();
+    }
+    
+    if (blogData.status === "published") {
+      payload.published_at = blogData.published_at || new Date().toISOString();
+    } else {
+      payload.published_at = blogData.published_at || null;
+    }
 
     if (isNew) {
       const newBlog = {
         ...payload,
         id: String(local.length + 1),
-        created_at: new Date().toISOString(),
       };
       local.push(newBlog);
       writeLocalBlogs(local);
@@ -263,3 +328,24 @@ export async function deleteBlog(id: string) {
     return { success: true, source: "local" };
   }
 }
+
+export async function getProductsList() {
+  try {
+    const { data, error } = await supabase
+      .from("products")
+      .select("id, name, image_url, affiliate_url, price")
+      .order("name");
+    
+    if (error) {
+      if (error.code === "PGRST205" || error.message.includes("relation \"public.products\" does not exist")) {
+        return { success: true, data: [] };
+      }
+      throw error;
+    }
+    return { success: true, data: data || [] };
+  } catch (err: any) {
+    console.error("Failed to fetch products for blog builder:", err.message);
+    return { success: true, data: [] };
+  }
+}
+
