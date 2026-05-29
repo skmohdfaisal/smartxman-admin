@@ -51,25 +51,25 @@ export default function PriceTrackerPage() {
   const fetchProductsAndSettings = async () => {
     setLoading(true);
     try {
-      // 1. Fetch site settings to get freshness window
-      const { data: settings } = await supabase
-        .from("site_settings")
-        .select("price_freshness_window")
-        .limit(1)
-        .maybeSingle();
-      
-      if (settings && settings.price_freshness_window) {
-        setFreshnessWindow(settings.price_freshness_window);
+      // Fetch both site settings and products concurrently
+      const [settingsRes, productsRes] = await Promise.all([
+        supabase
+          .from("site_settings")
+          .select("price_freshness_window")
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("products")
+          .select("*, primary_category:categories!products_primary_category_id_fkey(name)")
+          .order("name", { ascending: true })
+      ]);
+
+      if (settingsRes.data && settingsRes.data.price_freshness_window) {
+        setFreshnessWindow(settingsRes.data.price_freshness_window);
       }
 
-      // 2. Fetch products
-      const { data: prods, error } = await supabase
-        .from("products")
-        .select("*, primary_category:categories!products_primary_category_id_fkey(name)")
-        .order("name", { ascending: true });
-
-      if (error) throw error;
-      setProducts(prods || []);
+      if (productsRes.error) throw productsRes.error;
+      setProducts(productsRes.data || []);
     } catch (err) {
       console.error("Error fetching price tracker products:", err);
     } finally {

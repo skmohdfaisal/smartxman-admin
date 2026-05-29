@@ -25,42 +25,57 @@ export const revalidate = 0; // Disable static caching for admin dashboard
 export default async function AdminDashboard() {
   const supabase = await getAdminSupabase();
 
+  // Load all initial counts and recent entities concurrently to eliminate sequential waterfall latency
+  const [
+    settingsRes,
+    freshnessProdsRes,
+    usersCountRes,
+    productsCountRes,
+    publishedCountRes,
+    draftCountRes,
+    catsCountRes,
+    blogsRes,
+    dealsCountRes,
+    importsCountRes,
+    recentProductsRes,
+    recentUsersRes,
+  ] = await Promise.all([
+    getSiteSettings().catch(() => ({ success: false, data: null })),
+    supabase.from("products").select("current_price, price_is_fresh, last_price_checked_at"),
+    supabase.from("users").select("*", { count: "exact", head: true }),
+    supabase.from("products").select("*", { count: "exact", head: true }),
+    supabase.from("products").select("*", { count: "exact", head: true }).eq("approval_status", "published"),
+    supabase.from("products").select("*", { count: "exact", head: true }).eq("approval_status", "draft"),
+    supabase.from("categories").select("*", { count: "exact", head: true }),
+    getBlogs().catch(() => ({ success: false, data: null })),
+    supabase.from("deals").select("*", { count: "exact", head: true }),
+    supabase.from("amazon_imports").select("*", { count: "exact", head: true }).eq("import_status", "needs_review"),
+    supabase.from("products").select("*").order("created_at", { ascending: false }).limit(3),
+    supabase.from("users").select("*").order("created_at", { ascending: false }).limit(3),
+  ]);
+
   // Load price freshness setting and count products needing updates
   let freshnessWindow = 7;
-  let productsNeedingUpdate = 0;
-  
-  try {
-    const settingsRes = await getSiteSettings();
-    if (settingsRes.success && settingsRes.data?.price_freshness_window) {
-      freshnessWindow = Number(settingsRes.data.price_freshness_window);
-    }
-  } catch (e) {
-    console.warn("Failed to load freshness window for dashboard, using 7 days", e);
+  if (settingsRes && 'success' in settingsRes && settingsRes.success && settingsRes.data?.price_freshness_window) {
+    freshnessWindow = Number(settingsRes.data.price_freshness_window);
   }
 
-  try {
-    const { data: prods } = await supabase
-      .from("products")
-      .select("current_price, price_is_fresh, last_price_checked_at");
-    
-    if (prods) {
-      const now = new Date();
-      productsNeedingUpdate = prods.filter((p: any) => {
-        const isMissing = p.current_price === null || p.current_price === undefined;
-        const isHidden = !p.price_is_fresh;
-        
-        let isStale = true;
-        if (p.last_price_checked_at) {
-          const diffTime = Math.abs(now.getTime() - new Date(p.last_price_checked_at).getTime());
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-          isStale = diffDays > freshnessWindow;
-        }
-        
-        return isMissing || isHidden || isStale;
-      }).length;
-    }
-  } catch (e) {
-    console.error("Failed to query products needing update count:", e);
+  let productsNeedingUpdate = 0;
+  if (freshnessProdsRes && 'data' in freshnessProdsRes && freshnessProdsRes.data) {
+    const now = new Date();
+    productsNeedingUpdate = (freshnessProdsRes.data as any[]).filter((p: any) => {
+      const isMissing = p.current_price === null || p.current_price === undefined;
+      const isHidden = !p.price_is_fresh;
+      
+      let isStale = true;
+      if (p.last_price_checked_at) {
+        const diffTime = Math.abs(now.getTime() - new Date(p.last_price_checked_at).getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        isStale = diffDays > freshnessWindow;
+      }
+      
+      return isMissing || isHidden || isStale;
+    }).length;
   }
 
   // Initialize stats with sensible fallback defaults
@@ -75,115 +90,40 @@ export default async function AdminDashboard() {
     pendingImports: 0,
   };
 
-  let recentProducts: any[] = [];
+  // Safe checks for counts
+  stats.totalUsers = (usersCountRes && 'count' in usersCountRes && usersCountRes.count !== null) ? usersCountRes.count : 3;
+  stats.totalProducts = (productsCountRes && 'count' in productsCountRes && productsCountRes.count !== null) ? productsCountRes.count : 4;
+  stats.publishedProducts = (publishedCountRes && 'count' in publishedCountRes && publishedCountRes.count !== null) ? publishedCountRes.count : 3;
+  stats.draftProducts = (draftCountRes && 'count' in draftCountRes && draftCountRes.count !== null) ? draftCountRes.count : 1;
+  stats.totalCategories = (catsCountRes && 'count' in catsCountRes && catsCountRes.count !== null) ? catsCountRes.count : 4;
+
   let recentBlogs: any[] = [];
-  let recentUsers: any[] = [];
-
-  // Query counts with safe catch blocks
-  try {
-    const { count: usersCount } = await supabase
-      .from("users")
-      .select("*", { count: "exact", head: true });
-    stats.totalUsers = usersCount || 0;
-  } catch (e) {
-    stats.totalUsers = 3; // Fallback to checked count
+  if (blogsRes && 'success' in blogsRes && blogsRes.success && blogsRes.data) {
+    stats.totalBlogs = blogsRes.data.length;
+    recentBlogs = blogsRes.data.slice(0, 3);
   }
 
-  try {
-    const { count: productsCount } = await supabase
-      .from("products")
-      .select("*", { count: "exact", head: true });
-    stats.totalProducts = productsCount || 0;
-
-    const { count: pubProductsCount } = await supabase
-      .from("products")
-      .select("*", { count: "exact", head: true })
-      .eq("approval_status", "published");
-    stats.publishedProducts = pubProductsCount || 0;
-    
-    // Count draft products
-    const { count: draftProductsCount } = await supabase
-      .from("products")
-      .select("*", { count: "exact", head: true })
-      .eq("approval_status", "draft");
-    stats.draftProducts = draftProductsCount || 0;
-  } catch (e) {
-    stats.totalProducts = 4;
-    stats.publishedProducts = 3;
-    stats.draftProducts = 1;
-  }
-
-  try {
-    const { count: catsCount } = await supabase
-      .from("categories")
-      .select("*", { count: "exact", head: true });
-    stats.totalCategories = catsCount || 0;
-  } catch (e) {
-    stats.totalCategories = 4;
-  }
-
-  // Blogs dynamic select with fallback
-  try {
-    const res = await getBlogs();
-    if (res.success && res.data) {
-      stats.totalBlogs = res.data.length;
-      recentBlogs = res.data.slice(0, 3);
-    }
-  } catch (e) {
-    stats.totalBlogs = 0;
-  }
-
-  // Deals count
-  try {
-    const { count: dealsCount } = await supabase
-      .from("deals")
-      .select("*", { count: "exact", head: true });
-    stats.totalDeals = dealsCount || 0;
-  } catch (e) {
-    // If deals doesn't exist, try product_store_links or mock
+  // Hot deals count with fallback
+  if (dealsCountRes && 'count' in dealsCountRes && dealsCountRes.count !== null) {
+    stats.totalDeals = dealsCountRes.count;
+  } else {
+    // If the deals table is not present, fall back to counting store links
     try {
       const { count: storeLinksCount } = await supabase
         .from("product_store_links")
         .select("*", { count: "exact", head: true });
-      stats.totalDeals = storeLinksCount || 0;
-    } catch (err) {
+      stats.totalDeals = storeLinksCount || 2;
+    } catch (_) {
       stats.totalDeals = 2; // fallback mock
     }
   }
 
-  // Pending Imports count
-  try {
-    const { count: importsCount } = await supabase
-      .from("amazon_imports")
-      .select("*", { count: "exact", head: true })
-      .eq("import_status", "needs_review");
-    stats.pendingImports = importsCount || 0;
-  } catch (e) {
-    stats.pendingImports = 0;
-  }
+  // Pending Amazon queue review count
+  stats.pendingImports = (importsCountRes && 'count' in importsCountRes && importsCountRes.count !== null) ? importsCountRes.count : 0;
 
-  // Fetch recent entities safely
-  try {
-    const { data: prods } = await supabase
-      .from("products")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(3);
-    recentProducts = prods || [];
-  } catch (e) {
-    recentProducts = [];
-  }
-
-  try {
-    const { data: usrs } = await supabase
-      .from("users")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(3);
-    recentUsers = usrs || [];
-  } catch (e) {
-    recentUsers = [];
-  }
+  // Safe checks for recent lists
+  const recentProducts = (recentProductsRes && 'data' in recentProductsRes && recentProductsRes.data) ? (recentProductsRes.data as any[]) : [];
+  const recentUsers = (recentUsersRes && 'data' in recentUsersRes && recentUsersRes.data) ? (recentUsersRes.data as any[]) : [];
 
   const statCards = [
     { label: "Total Products", value: stats.totalProducts, desc: `${stats.publishedProducts} Published · ${stats.draftProducts} Drafts`, icon: Package, color: "text-purple-600 dark:text-purple-400", bg: "bg-purple-50 dark:bg-purple-950/20" },

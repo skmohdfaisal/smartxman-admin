@@ -33,29 +33,31 @@ export async function checkAdmin() {
     redirect("/auth");
   }
 
-  // Auto-promote the owner to admin to prevent lockout
-  const ownerEmail = "skmohdfaisal07@gmail.com";
-  if (session.user.email === ownerEmail) {
-    const { data: currentProfile } = await supabase
-      .from("users")
-      .select("role")
-      .eq("id", session.user.id)
-      .single();
-
-    if (!currentProfile || currentProfile.role !== "admin") {
-      console.log(`[Auth] Auto-promoting ${ownerEmail} to admin`);
-      await supabase
-        .from("users")
-        .update({ role: "admin" })
-        .eq("id", session.user.id);
-    }
-  }
-
-  const { data: profile, error } = await supabase
+  // Fetch profile once safely
+  let { data: profile, error } = await supabase
     .from("users")
     .select("role")
     .eq("id", session.user.id)
-    .single();
+    .maybeSingle();
+
+  // Auto-promote the owner to admin to prevent lockout
+  const ownerEmail = "skmohdfaisal07@gmail.com";
+  if (session.user.email === ownerEmail) {
+    if (!profile || profile.role !== "admin") {
+      console.log(`[Auth] Auto-promoting ${ownerEmail} to admin`);
+      await supabase
+        .from("users")
+        .upsert({ 
+          id: session.user.id, 
+          email: session.user.email, 
+          role: "admin",
+          updated_at: new Date().toISOString()
+        });
+      
+      profile = { role: "admin" };
+      error = null;
+    }
+  }
 
   if (error || !profile || profile.role !== "admin") {
     redirect("/admin/access-denied");

@@ -28,22 +28,17 @@ export default function AdminCategories() {
 
   const fetchCategories = async () => {
     try {
-      // 1. Fetch categories
-      const { data: cats, error: catErr } = await supabase
-        .from('categories')
-        .select('*')
-        .order('name');
+      // Fetch categories and product references concurrently
+      const [catsRes, prodsRes] = await Promise.all([
+        supabase.from('categories').select('*').order('name'),
+        supabase.from('products').select('primary_category_id')
+      ]);
       
-      if (catErr) throw catErr;
-
-      // 2. Fetch products category references to count products client-side
-      const { data: prods, error: prodErr } = await supabase
-        .from('products')
-        .select('primary_category_id');
+      if (catsRes.error) throw catsRes.error;
 
       const counts: Record<string, number> = {};
-      if (prods) {
-        prods.forEach((p: any) => {
+      if (prodsRes.data) {
+        prodsRes.data.forEach((p: any) => {
           if (p.primary_category_id) {
             counts[p.primary_category_id] = (counts[p.primary_category_id] || 0) + 1;
           }
@@ -51,7 +46,7 @@ export default function AdminCategories() {
       }
 
       setProductCounts(counts);
-      setCategories(cats || []);
+      setCategories(catsRes.data || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
     } finally {

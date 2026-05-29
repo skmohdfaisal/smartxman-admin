@@ -59,18 +59,14 @@ export default function AdminProducts() {
   const fetchData = async () => {
     setRefreshing(true);
     try {
-      // 1. Fetch categories
-      const { data: cats } = await supabase.from('categories').select('*').order('name');
-      if (cats) setCategories(cats);
+      const [catsRes, prodsRes] = await Promise.all([
+        supabase.from('categories').select('*').order('name'),
+        supabase.from('products').select('*').order('created_at', { ascending: false })
+      ]);
 
-      // 2. Fetch products
-      const { data: prods, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setProducts(prods || []);
+      if (catsRes.data) setCategories(catsRes.data);
+      if (prodsRes.error) throw prodsRes.error;
+      setProducts(prodsRes.data || []);
     } catch (err) {
       console.error("Error loading products:", err);
     } finally {
