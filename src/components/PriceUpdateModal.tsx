@@ -97,8 +97,8 @@ export function PriceUpdateModal({ isOpen, onClose, product, onSuccess }: PriceU
             <div className="min-w-0 flex-1 space-y-0.5">
               <h4 className="font-extrabold text-sm text-slate-900 dark:text-white truncate">{product.name}</h4>
               <div className="flex items-center gap-4 text-[11px] text-slate-500 dark:text-slate-400 font-bold">
-                <span>Current: <span className="text-brand-600 dark:text-brand-400 font-black">{product.current_price ? `₹${product.current_price.toLocaleString('en-IN')}` : "N/A"}</span></span>
-                <span>Old: <span>{product.old_price ? `₹${product.old_price.toLocaleString('en-IN')}` : "N/A"}</span></span>
+                <span>Current: <span className="text-brand-600 dark:text-brand-400 font-black">{product.current_price ? `₹${Number(product.current_price).toLocaleString('en-IN')}` : "N/A"}</span></span>
+                <span>Old: <span>{product.old_price ? `₹${Number(product.old_price).toLocaleString('en-IN')}` : "N/A"}</span></span>
               </div>
               <div className="flex items-center gap-1.5 text-[10px] text-slate-450 dark:text-slate-500 font-semibold pt-0.5">
                 <Calendar className="w-3.5 h-3.5" />

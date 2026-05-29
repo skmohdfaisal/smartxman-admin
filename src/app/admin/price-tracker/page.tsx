@@ -41,7 +41,10 @@ export default function PriceTrackerPage() {
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
+    setMounted(true);
     fetchProductsAndSettings();
   }, []);
 
@@ -487,11 +490,11 @@ export default function PriceTrackerPage() {
                       <td className="p-4 min-w-[140px]">
                         <div className="flex flex-col">
                           <span className="text-sm font-black text-slate-900 dark:text-slate-100">
-                            {p.current_price !== null ? `₹${p.current_price.toLocaleString('en-IN')}` : "N/A"}
+                            {p.current_price !== null ? (mounted ? `₹${Number(p.current_price).toLocaleString('en-IN')}` : "₹...") : "N/A"}
                           </span>
                           {p.old_price && (
                             <span className="text-xs text-slate-400 line-through mt-0.5">
-                              ₹{p.old_price.toLocaleString('en-IN')}
+                              {mounted ? `₹${Number(p.old_price).toLocaleString('en-IN')}` : "₹..."}
                             </span>
                           )}
                         </div>
@@ -501,7 +504,7 @@ export default function PriceTrackerPage() {
                         <div className="flex items-center gap-1.5 text-xs text-slate-500">
                           <Calendar className="w-3.5 h-3.5 shrink-0" />
                           <span>
-                            {p.last_price_checked_at 
+                            {!mounted ? "Loading..." : p.last_price_checked_at 
                               ? new Date(p.last_price_checked_at).toLocaleDateString()
                               : "Never Checked"}
                           </span>
