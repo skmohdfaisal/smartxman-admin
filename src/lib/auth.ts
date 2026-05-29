@@ -33,31 +33,35 @@ export async function checkAdmin() {
     redirect("/auth");
   }
 
-  // Fetch profile once safely
-  let { data: profile, error } = await supabase
+  // Zero-latency bypass for the owner: since their email is verified by Supabase Auth
+  // and hardcoded, we can grant immediate access without waiting for database queries.
+  const ownerEmail = "skmohdfaisal07@gmail.com";
+  if (session.user.email === ownerEmail) {
+    // Keep user table synchronized in the background without blocking the response
+    (async () => {
+      try {
+        await supabase
+          .from("users")
+          .upsert({ 
+            id: session.user.id, 
+            email: session.user.email, 
+            role: "admin",
+            updated_at: new Date().toISOString()
+          });
+      } catch (err) {
+        console.error("[Auth] Background admin promotion failed:", err);
+      }
+    })();
+
+    return { supabase, session, user: session.user };
+  }
+
+  // Fetch profile once safely for other users
+  const { data: profile, error } = await supabase
     .from("users")
     .select("role")
     .eq("id", session.user.id)
     .maybeSingle();
-
-  // Auto-promote the owner to admin to prevent lockout
-  const ownerEmail = "skmohdfaisal07@gmail.com";
-  if (session.user.email === ownerEmail) {
-    if (!profile || profile.role !== "admin") {
-      console.log(`[Auth] Auto-promoting ${ownerEmail} to admin`);
-      await supabase
-        .from("users")
-        .upsert({ 
-          id: session.user.id, 
-          email: session.user.email, 
-          role: "admin",
-          updated_at: new Date().toISOString()
-        });
-      
-      profile = { role: "admin" };
-      error = null;
-    }
-  }
 
   if (error || !profile || profile.role !== "admin") {
     redirect("/admin/access-denied");
