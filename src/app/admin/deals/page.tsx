@@ -30,21 +30,24 @@ export default function AdminDeals() {
 
   const loadData = async () => {
     setLoading(true);
-    // Fetch deals
-    const res = await getDeals();
-    if (res.success) {
-      setDeals(res.data);
-      setDbSource(res.source || "");
-    }
-
-    // Fetch products list for dropdown
     try {
-      const { data } = await supabase.from("products").select("id, name").order("name");
-      setProducts(data || []);
+      // Fetch deals and products list concurrently
+      const [dealsRes, productsRes] = await Promise.all([
+        getDeals(),
+        supabase.from("products").select("id, name").order("name")
+      ]);
+
+      if (dealsRes.success) {
+        setDeals(dealsRes.data);
+        setDbSource(dealsRes.source || "");
+      }
+
+      setProducts(productsRes.data || []);
     } catch (e) {
       console.error(e);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleSave = async (e: React.FormEvent) => {
