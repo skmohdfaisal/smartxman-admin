@@ -10,6 +10,7 @@ export default function AdminSettings() {
     contact_email: "",
     amazon_associate_tag: "",
     amazon_marketplace: "",
+    price_freshness_window: 7,
     footer_disclosure: ""
   });
   const [loading, setLoading] = useState(true);
@@ -31,7 +32,7 @@ export default function AdminSettings() {
     setLoading(false);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setSettings((prev: any) => ({ ...prev, [name]: value }));
   };
@@ -186,6 +187,36 @@ export default function AdminSettings() {
                 placeholder="Amazon disclosure text here..."
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
               />
+            </div>
+          </div>
+
+          {/* Price Tracking Settings Section */}
+          <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 p-6 md:p-8 shadow-sm space-y-6">
+            <h2 className="text-xl font-black text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
+              <RefreshCw className="w-5 h-5 text-slate-400" />
+              Manual Price Tracking
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Price Freshness Window
+                </label>
+                <select
+                  name="price_freshness_window"
+                  value={settings.price_freshness_window || 7}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                >
+                  <option value={1} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">1 Day</option>
+                  <option value={3} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">3 Days</option>
+                  <option value={7} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">7 Days</option>
+                  <option value={15} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">15 Days</option>
+                </select>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+                  Manual pricing is marked stale/expired once it exceeds this number of days since the last verified check.
+                </p>
+              </div>
             </div>
           </div>
 

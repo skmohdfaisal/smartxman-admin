@@ -73,6 +73,8 @@ export default function NewProduct() {
   const [originalAmazonUrl, setOriginalAmazonUrl] = useState("");
   const [affiliateLink, setAffiliateLink] = useState("");
   const [detectedAsin, setDetectedAsin] = useState("");
+  const [marketplace, setMarketplace] = useState("www.amazon.in");
+  const [importSource, setImportSource] = useState("manual");
   const [isFetchingAmazon, setIsFetchingAmazon] = useState(false);
   const [amazonFetchMessage, setAmazonFetchMessage] = useState<{type: 'error' | 'success' | 'info', text: string} | null>(null);
   const [detectedProduct, setDetectedProduct] = useState<{
@@ -82,6 +84,15 @@ export default function NewProduct() {
     rating: string;
     image: string;
   } | null>(null);
+
+  // States: Manual Pricing
+  const [currentPrice, setCurrentPrice] = useState("");
+  const [oldPrice, setOldPrice] = useState("");
+  const [currency, setCurrency] = useState("INR");
+  const [priceIsFresh, setPriceIsFresh] = useState(false);
+  const [lastPriceCheckedAt, setLastPriceCheckedAt] = useState("");
+  const [priceSource, setPriceSource] = useState("manual");
+  const [freshnessWindow, setFreshnessWindow] = useState(7);
 
   // States: Basic Info
   const [name, setName] = useState("");
@@ -135,6 +146,51 @@ export default function NewProduct() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isGeneratingAiNote, setIsGeneratingAiNote] = useState(false);
+
+  // Helper functions for manual updates
+  const extractAsin = (url: string) => {
+    const match = url.match(/\/([A-Z0-9]{10})(?:[/?]|$)/i);
+    return match ? match[1] : "";
+  };
+
+  const handleExtractAsin = () => {
+    const activeUrl = originalAmazonUrl || affiliateLink;
+    if (!activeUrl) {
+      alert("Please provide an Amazon or Affiliate URL first.");
+      return;
+    }
+    const asinVal = extractAsin(activeUrl);
+    if (asinVal) {
+      setDetectedAsin(asinVal);
+      alert(`Successfully extracted ASIN: ${asinVal}`);
+    } else {
+      alert("Could not detect standard 10-character ASIN format in the URL. Please verify the link.");
+    }
+  };
+
+  const getPriceStatus = () => {
+    if (!currentPrice) return { label: "Missing Price", color: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/20 dark:text-red-400" };
+    if (!priceIsFresh) return { label: "Hidden", color: "bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400" };
+    if (!lastPriceCheckedAt) return { label: "Needs Update", color: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-400" };
+    
+    const diffTime = Math.abs(new Date().getTime() - new Date(lastPriceCheckedAt).getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (diffDays <= freshnessWindow) {
+      return { label: "Fresh", color: "bg-emerald-50 text-emerald-700 border-emerald-250 dark:bg-emerald-950/20 dark:text-emerald-450" };
+    }
+    return { label: "Needs Update", color: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-400" };
+  };
+
+  // Load general settings to get price freshness window limit
+  useEffect(() => {
+    async function loadSettings() {
+      const { data } = await supabase.from('site_settings').select('*').limit(1).maybeSingle();
+      if (data && data.price_freshness_window) {
+        setFreshnessWindow(data.price_freshness_window);
+      }
+    }
+    loadSettings();
+  }, []);
   const [isSuggestingCategories, setIsSuggestingCategories] = useState(false);
 
   // Load Curated Categories & Auto-seed dynamically from browser if missing
@@ -498,6 +554,15 @@ export default function NewProduct() {
         expert_note: expertNote,
         original_url: originalAmazonUrl,
         affiliate_link: affiliateLink,
+        asin: detectedAsin || null,
+        marketplace: marketplace || null,
+        import_source: importSource || null,
+        current_price: currentPrice ? parseFloat(currentPrice) : null,
+        old_price: oldPrice ? parseFloat(oldPrice) : null,
+        currency: currency || 'INR',
+        price_is_fresh: priceIsFresh,
+        last_price_checked_at: lastPriceCheckedAt ? new Date(lastPriceCheckedAt).toISOString() : null,
+        price_source: priceSource || 'manual',
         price_range: price,
         rating: parseFloat(rating) || 0,
         images,
@@ -532,6 +597,19 @@ export default function NewProduct() {
       if (error) {
         throw new Error(`Database Error: ${error.message}`);
       }
+
+      // If product has a price, insert initial price to price_history
+      if (newProduct && currentPrice) {
+        await supabase.from('price_history').insert([{
+          product_id: newProduct.id,
+          old_price: null,
+          new_price: parseFloat(currentPrice),
+          currency: currency || 'INR',
+          source: 'manual',
+          note: 'Initial price set on creation'
+        }]);
+      }
+
 
       // Handle categories linkage
       if (newProduct) {
@@ -660,23 +738,99 @@ export default function NewProduct() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-1.5">
                   <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Original Amazon URL</label>
-                  <input 
-                    type="text" 
-                    value={originalAmazonUrl}
-                    onChange={(e) => setOriginalAmazonUrl(e.target.value)}
-                    placeholder="https://www.amazon.in/dp/B08DFX... (optional)" 
-                    className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm" 
-                  />
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      value={originalAmazonUrl}
+                      onChange={(e) => setOriginalAmazonUrl(e.target.value)}
+                      placeholder="https://www.amazon.in/dp/B08DFX... (optional)" 
+                      className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm" 
+                    />
+                    {originalAmazonUrl && (
+                      <a
+                        href={originalAmazonUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl flex items-center justify-center border border-slate-200 dark:border-slate-700"
+                        title="Open Amazon Product Page"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </a>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-450 dark:text-slate-400 font-medium leading-normal mt-1">
+                    “Original URL is for admin reference. Public users will be sent through the affiliate URL.”
+                  </p>
                 </div>
                 <div className="space-y-1.5">
                   <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Custom Affiliate URL <span className="text-brand-500">*</span></label>
-                  <input 
-                    type="text" 
-                    value={affiliateLink}
-                    onChange={(e) => setAffiliateLink(e.target.value)}
-                    placeholder="https://amzn.to/4dZMlje (Required)" 
-                    className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-brand-200 dark:border-brand-900/40 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm font-semibold" 
-                  />
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      value={affiliateLink}
+                      onChange={(e) => setAffiliateLink(e.target.value)}
+                      placeholder="https://amzn.to/4dZMlje (Required)" 
+                      className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-brand-200 dark:border-brand-900/40 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm font-semibold" 
+                    />
+                    {affiliateLink && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(affiliateLink);
+                          alert("Affiliate URL copied to clipboard!");
+                        }}
+                        className="px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl flex items-center justify-center border border-slate-200 dark:border-slate-700"
+                        title="Copy Affiliate Link"
+                      >
+                        <Check className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">ASIN (Amazon Standard Identification Number)</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      value={detectedAsin}
+                      onChange={(e) => setDetectedAsin(e.target.value)}
+                      placeholder="e.g. B08DFX... (optional)" 
+                      className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm font-mono" 
+                    />
+                    <button
+                      type="button"
+                      onClick={handleExtractAsin}
+                      className="px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 shrink-0"
+                    >
+                      Extract ASIN
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Marketplace</label>
+                    <input 
+                      type="text" 
+                      value={marketplace}
+                      onChange={(e) => setMarketplace(e.target.value)}
+                      placeholder="www.amazon.in" 
+                      className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm" 
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Import Source</label>
+                    <select
+                      value={importSource}
+                      onChange={(e) => setImportSource(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm text-slate-700 dark:text-slate-300"
+                    >
+                      <option value="manual">Manual Update</option>
+                      <option value="amazon_api">Amazon API (PA-API)</option>
+                      <option value="importer">CSV/Bulk Importer</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -769,9 +923,7 @@ export default function NewProduct() {
                     placeholder="e.g. Logitech MX Master 3S Wireless Mouse" 
                     className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500" 
                   />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="space-y-1.5">
                     <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Brand</label>
                     <input 
@@ -783,7 +935,7 @@ export default function NewProduct() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Price Range</label>
+                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Price Range (Text Reference)</label>
                     <input 
                       type="text" 
                       value={price} 
@@ -803,7 +955,89 @@ export default function NewProduct() {
                       className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm font-bold text-slate-700 dark:text-slate-300" 
                     />
                   </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Currency</label>
+                    <select
+                      value={currency}
+                      onChange={(e) => setCurrency(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm text-slate-700 dark:text-slate-300 font-bold"
+                    >
+                      <option value="INR">INR (₹)</option>
+                      <option value="USD">USD ($)</option>
+                      <option value="EUR">EUR (€)</option>
+                      <option value="GBP">GBP (£)</option>
+                    </select>
+                  </div>
                 </div>
+
+                {/* Manual Pricing Numeric Fields & Status Widget */}
+                <div className="bg-slate-50 dark:bg-slate-800/30 p-5 rounded-2xl border border-slate-200 dark:border-slate-855 grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                  <div className="space-y-1.5">
+                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Current Numeric Price</label>
+                    <input 
+                      type="number" 
+                      value={currentPrice} 
+                      onChange={(e) => setCurrentPrice(e.target.value)} 
+                      placeholder="e.g. 8995" 
+                      className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm font-black text-brand-600 dark:text-brand-400" 
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Old Numeric Price</label>
+                    <input 
+                      type="number" 
+                      value={oldPrice} 
+                      onChange={(e) => setOldPrice(e.target.value)} 
+                      placeholder="e.g. 9999" 
+                      className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm font-semibold" 
+                    />
+                  </div>
+                  <div className="space-y-2 pt-1.5">
+                    <span className="block text-xs font-black uppercase tracking-wider text-slate-400">Price Status Controls</span>
+                    <div className="flex gap-2 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setLastPriceCheckedAt(new Date().toISOString());
+                          setPriceIsFresh(true);
+                          setPriceSource('manual');
+                          alert("Product marked as checked today!");
+                        }}
+                        className="px-3 py-2.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 rounded-xl text-xs font-bold transition-all border border-emerald-200/25 dark:border-emerald-900/30 flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Check className="w-3.5 h-3.5" /> Checked Today
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPriceIsFresh(false);
+                          alert("Product price status set to Hidden!");
+                        }}
+                        className="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-655 dark:text-slate-300 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-750 flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" /> Hide Price
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status and Last Checked Widget */}
+                {(() => {
+                  const statusInfo = getPriceStatus();
+                  return (
+                    <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-800/80 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-slate-500 dark:text-slate-400">Price Status:</span>
+                        <span className={`px-2.5 py-1 rounded-full font-black uppercase text-[10px] tracking-wider border ${statusInfo.color}`}>
+                          {statusInfo.label}
+                        </span>
+                      </div>
+                      <div className="text-slate-500 dark:text-slate-400 font-bold">
+                        Last Checked: <span className="text-slate-800 dark:text-white font-black">{lastPriceCheckedAt ? new Date(lastPriceCheckedAt).toLocaleString() : "Never"}</span>
+                      </div>
+                    </div>
+                  );
+                })()}          </div>
 
                 <div className="space-y-1.5">
                   <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Product Description</label>

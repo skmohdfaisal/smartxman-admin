@@ -17,7 +17,8 @@ import {
   ChevronRight,
   Menu,
   Shield,
-  Bell
+  Bell,
+  TrendingUp
 } from "lucide-react";
 import { checkAdmin } from "@/lib/auth";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -33,20 +34,46 @@ export default async function AdminLayout({
     ? "http://localhost:3000" 
     : (process.env.NEXT_PUBLIC_STORE_URL || "https://smartxman.vercel.app");
 
-  const menuItems = [
-    { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
-    { label: "Products", href: "/admin/products", icon: Package },
-    { label: "Product Importer", href: "/admin/product-importer", icon: UploadCloud },
-    { label: "Import Review", href: "/admin/import-review", icon: ClipboardCheck },
-    { label: "Categories", href: "/admin/categories", icon: Tag },
-    { label: "Blogs", href: "/admin/blogs", icon: FileText },
-    { label: "Deals", href: "/admin/deals", icon: Percent },
-    { label: "Users", href: "/admin/users", icon: Users },
-    { label: "Comments", href: "/admin/comments", icon: MessageSquare },
-    { label: "Homepage", href: "/admin/homepage", icon: Home },
-    { label: "SEO", href: "/admin/seo", icon: Search },
-    { label: "Newsletter", href: "/admin/newsletter", icon: Mail },
-    { label: "Settings", href: "/admin/settings", icon: Settings },
+  const menuSections = [
+    {
+      title: "Dashboard",
+      items: [
+        { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
+      ]
+    },
+    {
+      title: "Content",
+      items: [
+        { label: "Products", href: "/admin/products", icon: Package },
+        { label: "Categories", href: "/admin/categories", icon: Tag },
+        { label: "Blogs", href: "/admin/blogs", icon: FileText },
+        { label: "Deals", href: "/admin/deals", icon: Percent },
+      ]
+    },
+    {
+      title: "Operations",
+      items: [
+        { label: "Product Importer", href: "/admin/product-importer", icon: UploadCloud },
+        { label: "Import Review", href: "/admin/import-review", icon: ClipboardCheck },
+        { label: "Price Tracker", href: "/admin/price-tracker", icon: TrendingUp },
+      ]
+    },
+    {
+      title: "Users",
+      items: [
+        { label: "Users", href: "/admin/users", icon: Users },
+        { label: "Comments", href: "/admin/comments", icon: MessageSquare },
+        { label: "Newsletter", href: "/admin/newsletter", icon: Mail },
+      ]
+    },
+    {
+      title: "Website",
+      items: [
+        { label: "Homepage", href: "/admin/homepage", icon: Home },
+        { label: "SEO", href: "/admin/seo", icon: Search },
+        { label: "Settings", href: "/admin/settings", icon: Settings },
+      ]
+    }
   ];
 
   return (
@@ -65,16 +92,27 @@ export default async function AdminLayout({
           </div>
         </div>
         
-        <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1 scrollbar-thin">
-          {menuItems.map((item, idx) => (
-            <Link 
-              key={idx} 
-              href={item.href} 
-              className="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-[14px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-brand-600 dark:hover:text-brand-400 transition-all duration-200"
-            >
-              <item.icon className="w-5 h-5 opacity-80" /> 
-              <span>{item.label}</span>
-            </Link>
+        <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-6 scrollbar-thin">
+          {menuSections.map((section, sIdx) => (
+            <div key={sIdx} className="space-y-1.5">
+              {section.title !== "Dashboard" && (
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 px-3.5 mb-2">
+                  {section.title}
+                </p>
+              )}
+              <div className="space-y-1">
+                {section.items.map((item, idx) => (
+                  <Link 
+                    key={idx} 
+                    href={item.href} 
+                    className="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-[14px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-brand-600 dark:hover:text-brand-400 transition-all duration-200"
+                  >
+                    <item.icon className="w-5 h-5 opacity-80" /> 
+                    <span>{item.label}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
         

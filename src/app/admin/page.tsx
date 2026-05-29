@@ -12,16 +12,56 @@ import {
   Layers,
   ArrowUpRight,
   TrendingUp,
-  FileSpreadsheet
+  FileSpreadsheet,
+  AlertCircle
 } from "lucide-react";
 import { getAdminSupabase } from "@/lib/auth";
 import { getBlogs } from "./blogs/actions";
+import { getSiteSettings } from "./settings/actions";
 import Link from "next/link";
 
 export const revalidate = 0; // Disable static caching for admin dashboard
 
 export default async function AdminDashboard() {
   const supabase = await getAdminSupabase();
+
+  // Load price freshness setting and count products needing updates
+  let freshnessWindow = 7;
+  let productsNeedingUpdate = 0;
+  
+  try {
+    const settingsRes = await getSiteSettings();
+    if (settingsRes.success && settingsRes.data?.price_freshness_window) {
+      freshnessWindow = Number(settingsRes.data.price_freshness_window);
+    }
+  } catch (e) {
+    console.warn("Failed to load freshness window for dashboard, using 7 days", e);
+  }
+
+  try {
+    const { data: prods } = await supabase
+      .from("products")
+      .select("current_price, price_is_fresh, last_price_checked_at");
+    
+    if (prods) {
+      const now = new Date();
+      productsNeedingUpdate = prods.filter((p: any) => {
+        const isMissing = p.current_price === null || p.current_price === undefined;
+        const isHidden = !p.price_is_fresh;
+        
+        let isStale = true;
+        if (p.last_price_checked_at) {
+          const diffTime = Math.abs(now.getTime() - new Date(p.last_price_checked_at).getTime());
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          isStale = diffDays > freshnessWindow;
+        }
+        
+        return isMissing || isHidden || isStale;
+      }).length;
+    }
+  } catch (e) {
+    console.error("Failed to query products needing update count:", e);
+  }
 
   // Initialize stats with sensible fallback defaults
   let stats = {
@@ -176,6 +216,32 @@ export default async function AdminDashboard() {
           </Link>
         </div>
       </div>
+
+      {/* Price Tracker Alert Banner */}
+      {productsNeedingUpdate > 0 && (
+        <Link 
+          href="/admin/price-tracker?filter=needs_update"
+          className="flex flex-col md:flex-row items-center justify-between gap-4 p-6 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent hover:from-amber-500/15 hover:via-amber-500/10 border border-amber-500/20 rounded-[2rem] shadow-sm transition-all group cursor-pointer"
+        >
+          <div className="flex items-center gap-4">
+            <div className="p-3.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-2xl group-hover:scale-105 transition-transform shrink-0">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="font-black text-slate-900 dark:text-white text-sm">
+                Products Needing Price Update
+              </h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                There are <span className="font-bold text-amber-600 dark:text-amber-400">{productsNeedingUpdate} products</span> that have missing, hidden, or stale Amazon prices exceeding the {freshnessWindow}-day freshness window.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 shrink-0">
+            <span>Update Now</span>
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </div>
+        </Link>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

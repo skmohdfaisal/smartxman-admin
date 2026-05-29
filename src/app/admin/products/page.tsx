@@ -19,12 +19,14 @@ import {
   ArrowUpDown,
   RefreshCw,
   FolderOpen,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Coins
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { PriceUpdateModal } from "@/components/PriceUpdateModal";
 
 export default function AdminProducts() {
   const [products, setProducts] = useState<any[]>([]);
@@ -40,6 +42,10 @@ export default function AdminProducts() {
   const [selectedBudget, setSelectedBudget] = useState("all");
   const [minScore, setMinScore] = useState("all");
   const [missingDataFilter, setMissingDataFilter] = useState("all");
+  
+  // Price Update Modal State
+  const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -226,6 +232,10 @@ export default function AdminProducts() {
           >
             <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
           </button>
+          
+          <Link href="/admin/price-tracker" className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-bold transition-all flex items-center gap-2 border border-slate-200 dark:border-slate-750">
+            Price Tracker
+          </Link>
           
           <Link href="/admin/products/new" className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold transition-all flex items-center gap-2 shadow-md shadow-brand-500/25">
             <Plus className="w-5 h-5" /> Add Product
@@ -487,6 +497,18 @@ export default function AdminProducts() {
                           >
                             <Edit className="w-4 h-4" />
                           </Link>
+
+                          <button 
+                            type="button" 
+                            onClick={() => {
+                              setSelectedProduct(p);
+                              setIsModalOpen(true);
+                            }}
+                            className="p-2 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-600 dark:bg-slate-850 dark:hover:bg-slate-800 text-slate-505 rounded-lg transition-all"
+                            title="Manual Price Update"
+                          >
+                            <Coins className="w-4 h-4" />
+                          </button>
                           
                           <button 
                             type="button" 
@@ -537,6 +559,17 @@ export default function AdminProducts() {
           </div>
         )}
       </div>
+
+      {/* Price Update Modal */}
+      <PriceUpdateModal 
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedProduct(null);
+        }}
+        product={selectedProduct}
+        onSuccess={fetchData}
+      />
     </div>
   );
 }

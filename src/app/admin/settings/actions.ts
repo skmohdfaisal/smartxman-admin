@@ -12,6 +12,7 @@ const defaultSettings = {
   contact_email: "skmohdfaisal07@gmail.com",
   amazon_associate_tag: "smartxman-21",
   amazon_marketplace: "www.amazon.in",
+  price_freshness_window: 7,
   footer_disclosure: "smartXman is a participant in the Amazon Services LLC Associates Program, an affiliate advertising program designed to provide a means for sites to earn advertising fees by advertising and linking to Amazon.in."
 };
 
@@ -53,6 +54,7 @@ export async function saveSiteSettings(settings: any) {
       contact_email: settings.contact_email || defaultSettings.contact_email,
       amazon_associate_tag: settings.amazon_associate_tag || defaultSettings.amazon_associate_tag,
       amazon_marketplace: settings.amazon_marketplace || defaultSettings.amazon_marketplace,
+      price_freshness_window: Number(settings.price_freshness_window) || defaultSettings.price_freshness_window,
       footer_disclosure: settings.footer_disclosure || defaultSettings.footer_disclosure,
       updated_at: new Date().toISOString()
     };
