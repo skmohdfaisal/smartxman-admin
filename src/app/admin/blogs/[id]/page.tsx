@@ -857,7 +857,9 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                       Alt Text <span className="text-red-500">*</span>
-                      <HelpCircle className="w-3.5 h-3.5 text-slate-400 tooltip-trigger" title="Crucial for SEO. Describes the image for search engines." />
+                      <span className="tooltip-trigger" title="Crucial for SEO. Describes the image for search engines.">
+                        <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
+                      </span>
                     </label>
                     <input
                       type="text"
