@@ -3,35 +3,35 @@
 import { use, useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { 
-  ArrowLeft, 
-  Save, 
-  Plus, 
-  Trash2, 
-  Loader2, 
-  Sparkles, 
-  Eye, 
-  Image as ImageIcon, 
-  Bold, 
-  Italic, 
-  List, 
-  ListOrdered, 
-  Link2, 
-  Quote, 
-  Heading2, 
-  Heading3, 
-  HelpCircle, 
-  ArrowUp, 
-  ArrowDown, 
-  Settings, 
-  ShieldAlert, 
-  Calendar, 
-  Lock, 
-  CheckCircle, 
-  Search, 
-  FileText, 
-  ExternalLink, 
-  Upload, 
+import {
+  ArrowLeft,
+  Save,
+  Plus,
+  Trash2,
+  Loader2,
+  Sparkles,
+  Eye,
+  Image as ImageIcon,
+  Bold,
+  Italic,
+  List,
+  ListOrdered,
+  Link2,
+  Quote,
+  Heading2,
+  Heading3,
+  HelpCircle,
+  ArrowUp,
+  ArrowDown,
+  Settings,
+  ShieldAlert,
+  Calendar,
+  Lock,
+  CheckCircle,
+  Search,
+  FileText,
+  ExternalLink,
+  Upload,
   AlertCircle,
   FileCheck,
   Tag,
@@ -180,7 +180,7 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
         setVisibility(blog.visibility || "public");
         setFeatured(!!blog.featured);
         setShowOnHomepage(!!blog.show_on_homepage);
-        
+
         // Cover Image mapping
         setCoverImageUrl(blog.cover_image_url || blog.cover_image || "");
         setCoverImageAlt(blog.cover_image_alt || "");
@@ -224,7 +224,7 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)/g, "");
       setSlug(generated);
-      
+
       // Auto-populate SEO Title if empty
       if (!seoTitle) {
         setSeoTitle(val.substring(0, 60));
@@ -336,7 +336,7 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
     const replacement = syntaxBefore + (selectedText || "text") + syntaxAfter;
 
     setContent(text.substring(0, start) + replacement + text.substring(end));
-    
+
     // Maintain cursor focus
     setTimeout(() => {
       textarea.focus();
@@ -503,7 +503,7 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
   // Simple client-side preview rendering helper
   const renderSimplePreview = (markdown: string) => {
     if (!markdown) return <p className="text-slate-400 italic">No content written yet...</p>;
-    
+
     return markdown.split("\n").map((line, idx) => {
       const trimmed = line.trim();
       if (trimmed.startsWith("# ")) {
@@ -534,16 +534,16 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
   }
 
   // Set color for health indicators
-  const healthColor = 
-    healthScore >= 80 
-      ? "text-green-500 border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20" 
-      : healthScore >= 50 
-      ? "text-amber-500 border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20" 
-      : "text-red-500 border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/20";
+  const healthColor =
+    healthScore >= 80
+      ? "text-green-500 border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20"
+      : healthScore >= 50
+        ? "text-amber-500 border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20"
+        : "text-red-500 border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/20";
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6 animate-in fade-in duration-300">
-      
+
       {/* Header controls */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-center gap-3">
@@ -608,10 +608,10 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
 
       {/* Main CMS Layout split */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        
+
         {/* LEFT COLUMN: Main Cards */}
         <div className="lg:col-span-2 space-y-6">
-          
+
           {/* CARD 1: Basic Blog Details */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800/85 p-6 shadow-sm space-y-6">
             <h3 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
@@ -626,11 +626,10 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
                     Article Title <span className="text-red-500">*</span>
                   </label>
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                    title.length >= 50 && title.length <= 60 
-                      ? "bg-green-500/15 text-green-600" 
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${title.length >= 50 && title.length <= 60
+                      ? "bg-green-500/15 text-green-600"
                       : "bg-slate-100 dark:bg-slate-800 text-slate-400"
-                  }`}>
+                    }`}>
                     {title.length} chars (Recommended: 50-60)
                   </span>
                 </div>
@@ -712,11 +711,10 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
                     Excerpt / Brief Summary <span className="text-red-500">*</span>
                   </label>
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                    excerpt.length >= 120 && excerpt.length <= 160 
-                      ? "bg-green-500/15 text-green-600" 
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${excerpt.length >= 120 && excerpt.length <= 160
+                      ? "bg-green-500/15 text-green-600"
                       : "bg-slate-100 dark:bg-slate-800 text-slate-400"
-                  }`}>
+                    }`}>
                     {excerpt.length} chars (Recommended: 120-160)
                   </span>
                 </div>
@@ -737,13 +735,13 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
                 </label>
                 <div className="flex flex-wrap gap-2 p-2 bg-slate-50/50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700 rounded-xl">
                   {tags.map(tag => (
-                    <span 
-                      key={tag} 
+                    <span
+                      key={tag}
                       className="px-2.5 py-1 bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/25 rounded-lg text-xs font-bold flex items-center gap-1.5"
                     >
                       {tag}
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => handleRemoveTag(tag)}
                         className="hover:text-red-500 transition-colors"
                       >
@@ -777,22 +775,20 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
               <button
                 type="button"
                 onClick={() => setImageOption("url")}
-                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                  imageOption === "url" 
-                    ? "bg-white dark:bg-slate-900 shadow-sm text-slate-900 dark:text-white" 
+                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${imageOption === "url"
+                    ? "bg-white dark:bg-slate-900 shadow-sm text-slate-900 dark:text-white"
                     : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-                }`}
+                  }`}
               >
                 Paste URL
               </button>
               <button
                 type="button"
                 onClick={() => setImageOption("upload")}
-                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                  imageOption === "upload" 
-                    ? "bg-white dark:bg-slate-900 shadow-sm text-slate-900 dark:text-white" 
+                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${imageOption === "upload"
+                    ? "bg-white dark:bg-slate-900 shadow-sm text-slate-900 dark:text-white"
                     : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-                }`}
+                  }`}
               >
                 Upload File
               </button>
@@ -819,7 +815,7 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
                     <span className="text-xs font-bold text-slate-500">Uploading image to storage...</span>
                   </div>
                 ) : (
-                  <div 
+                  <div
                     ref={dragAreaRef}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
@@ -830,10 +826,10 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
                     <Upload className="w-10 h-10 text-slate-400 mb-3" />
                     <span className="text-sm font-extrabold text-slate-700 dark:text-slate-300">Drag & Drop Image or Click to Browse</span>
                     <p className="text-[10px] text-slate-400 mt-1">Accepts PNG, JPG, JPEG, WEBP. Max size: 5MB.</p>
-                    <input 
-                      type="file" 
-                      id="cover-file-input" 
-                      className="hidden" 
+                    <input
+                      type="file"
+                      id="cover-file-input"
+                      className="hidden"
                       accept="image/*"
                       onChange={handleFileChange}
                     />
@@ -901,22 +897,20 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
                 <button
                   type="button"
                   onClick={() => setEditorTab("write")}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                    editorTab === "write" 
-                      ? "bg-white dark:bg-slate-900 shadow-sm text-slate-900 dark:text-white" 
+                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${editorTab === "write"
+                      ? "bg-white dark:bg-slate-900 shadow-sm text-slate-900 dark:text-white"
                       : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-                  }`}
+                    }`}
                 >
                   Write Markdown
                 </button>
                 <button
                   type="button"
                   onClick={() => setEditorTab("preview")}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                    editorTab === "preview" 
-                      ? "bg-white dark:bg-slate-900 shadow-sm text-slate-900 dark:text-white" 
+                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${editorTab === "preview"
+                      ? "bg-white dark:bg-slate-900 shadow-sm text-slate-900 dark:text-white"
                       : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-                  }`}
+                    }`}
                 >
                   Live Preview
                 </button>
@@ -1070,9 +1064,9 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
                     className="flex-1 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs"
                   />
                   {productSearch && (
-                    <button 
-                      type="button" 
-                      onClick={() => setProductSearch("")} 
+                    <button
+                      type="button"
+                      onClick={() => setProductSearch("")}
                       className="text-xs font-bold text-slate-400 hover:text-slate-600"
                     >
                       Clear
@@ -1085,8 +1079,8 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
                     {dbProducts
                       .filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase()))
                       .map(p => (
-                        <div 
-                          key={p.id} 
+                        <div
+                          key={p.id}
                           onClick={() => {
                             addProductBlock(p);
                             setProductSearch("");
@@ -1116,8 +1110,8 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
             ) : (
               <div className="space-y-6">
                 {productBlocks.map((block, idx) => (
-                  <div 
-                    key={idx} 
+                  <div
+                    key={idx}
                     className="p-5 border border-slate-200 dark:border-slate-800 rounded-3xl bg-slate-50/40 dark:bg-slate-900/20 space-y-4 relative animate-in fade-in"
                   >
                     <div className="absolute top-4 right-4 flex gap-1">
@@ -1266,8 +1260,8 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
             ) : (
               <div className="space-y-4">
                 {faqs.map((faq, idx) => (
-                  <div 
-                    key={idx} 
+                  <div
+                    key={idx}
                     className="p-4 border border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/40 dark:bg-slate-900/10 space-y-3 relative animate-in fade-in"
                   >
                     <div className="flex items-center justify-between">
@@ -1329,7 +1323,7 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
 
         {/* RIGHT COLUMN: Sticky Sidebars */}
         <div className="space-y-6 lg:sticky lg:top-6">
-          
+
           {/* SIDEBAR CARD 1: Publish Settings */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800/85 p-5 shadow-sm space-y-4">
             <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
@@ -1432,9 +1426,8 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
               <div className="space-y-1">
                 <div className="flex justify-between items-center">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">SEO Meta Title</label>
-                  <span className={`text-[9px] font-bold ${
-                    seoTitle.length >= 30 && seoTitle.length <= 60 ? "text-green-500" : "text-slate-400"
-                  }`}>
+                  <span className={`text-[9px] font-bold ${seoTitle.length >= 30 && seoTitle.length <= 60 ? "text-green-500" : "text-slate-400"
+                    }`}>
                     {seoTitle.length}/60
                   </span>
                 </div>
@@ -1451,9 +1444,8 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
               <div className="space-y-1">
                 <div className="flex justify-between items-center">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">SEO Meta Description</label>
-                  <span className={`text-[9px] font-bold ${
-                    seoDescription.length >= 120 && seoDescription.length <= 160 ? "text-green-500" : "text-slate-400"
-                  }`}>
+                  <span className={`text-[9px] font-bold ${seoDescription.length >= 120 && seoDescription.length <= 160 ? "text-green-500" : "text-slate-400"
+                    }`}>
                     {seoDescription.length}/160
                   </span>
                 </div>
