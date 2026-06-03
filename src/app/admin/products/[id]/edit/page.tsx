@@ -53,7 +53,11 @@ const subCategorySuggestions: Record<string, string[]> = {
   "Travel Tech": ["Power Bank", "Travel Adapter", "Cable Organizer", "Earbuds", "Backpack Tech Organizer", "Portable Charger"],
   "Budget Finds": ["Under ₹500", "Under ₹1000", "Under ₹3000", "Value Picks", "Best Deals"],
   "Tech Accessories": ["Laptop Stand", "Wireless Mouse", "Keyboard", "Microphone", "Lighting", "Headphones", "Desk Mat", "Phone Stand", "Power Bank", "USB Hub", "Webcam", "Monitor Arm"],
-  "Daily Use Products": ["Tumbler", "Organizer", "Keychain", "Cleaning Gel", "Desk Toy"]
+  "Daily Use Products": ["Tumbler", "Organizer", "Keychain", "Cleaning Gel", "Desk Toy"],
+  "Office Furniture & Comfort": ["Ergonomic Chair", "Ergonomic Cushion", "Back Support", "Laptop Table", "Study Table", "Standing Desk", "Footrest"],
+  "Photography & Videography": ["Tripod", "Phone Gimbal", "Mobile Holder", "Overhead Stand", "Ring Light", "Camera Mount"],
+  "Smart Home & Lighting": ["Smart Plug", "Smart Bulb", "Desk Lamp", "Study Lamp", "RGB Mood Light", "Voice Assistant"],
+  "Storage & Organization": ["Cable Organizer", "Desk Organizer", "Tech Pouch", "Storage Bag", "Organizer Box", "Whiteboard", "Planner Board"]
 };
 
 export default function EditProduct({ params }: { params: Promise<{ id: string }> }) {
@@ -205,7 +209,11 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
         { id: "c0000000-0000-0000-0000-000000000012", name: "Smart Gadgets / Lifestyle", slug: "smart-gadgets-lifestyle", icon: "Cpu", description: "Smart home assistants, plugs, bulbs, and displays" },
         { id: "c0000000-0000-0000-0000-000000000013", name: "Travel Tech", slug: "travel-tech", icon: "Compass", description: "Travel adapters, portable chargers, and tech organizers" },
         { id: "c0000000-0000-0000-0000-000000000015", name: "Budget Finds", slug: "budget-finds", icon: "DollarSign", description: "High value products and accessories under ₹1000" },
-        { id: "c0000000-0000-0000-0000-000000000016", name: "Daily Use Products", slug: "daily-use-products", icon: "Heart", description: "Everyday carry items, keychains, and cleaning products" }
+        { id: "c0000000-0000-0000-0000-000000000016", name: "Daily Use Products", slug: "daily-use-products", icon: "Heart", description: "Everyday carry items, keychains, and cleaning products" },
+        { id: "c0000000-0000-0000-0000-000000000026", name: "Office Furniture & Comfort", slug: "office-furniture-comfort", icon: "Armchair", description: "Ergonomic chairs, cushions, desks, and footrests" },
+        { id: "c0000000-0000-0000-0000-000000000027", name: "Photography & Videography", slug: "photography-videography", icon: "Camera", description: "Tripods, gimbals, mobile holders, and camera gear" },
+        { id: "c0000000-0000-0000-0000-000000000028", name: "Smart Home & Lighting", slug: "smart-home-lighting", icon: "Lightbulb", description: "Smart plugs, bulbs, RGB lights, and study lamps" },
+        { id: "c0000000-0000-0000-0000-000000000029", name: "Storage & Organization", slug: "storage-organization", icon: "Folder", description: "Cable managers, desk organizers, and tech pouches" }
       ];
 
       let dbFetchedCats: any[] = [];
@@ -474,6 +482,24 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
   };
   const handleMultiSelect = (setter: React.Dispatch<React.SetStateAction<string[]>>, value: string) => {
     setter(prev => prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value]);
+  };
+
+  const autoSelectBudget = (priceVal: number) => {
+    const ranges: string[] = [];
+    if (priceVal <= 500) ranges.push('Under ₹500');
+    if (priceVal <= 1000) ranges.push('Under ₹1000');
+    if (priceVal <= 1500) ranges.push('Under ₹1500');
+    if (priceVal <= 2000) ranges.push('Under ₹2000');
+    if (priceVal <= 3000) ranges.push('Under ₹3000');
+    if (priceVal <= 5000) ranges.push('Under ₹5000');
+    if (priceVal <= 10000) ranges.push('Under ₹10000');
+    if (priceVal <= 15000) ranges.push('Under ₹15000');
+    if (priceVal <= 20000) ranges.push('Under ₹20000');
+    
+    if (priceVal > 5000) {
+      ranges.push('Premium');
+    }
+    setBudgetRange(ranges);
   };
 
   // Handlers: File Upload
@@ -1066,7 +1092,13 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                     <input 
                       type="number" 
                       value={currentPrice} 
-                      onChange={(e) => setCurrentPrice(e.target.value)} 
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setCurrentPrice(val);
+                        if (val && !isNaN(Number(val))) {
+                          autoSelectBudget(Number(val));
+                        }
+                      }} 
                       placeholder="e.g. 8995" 
                       className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm font-black text-brand-600 dark:text-brand-400" 
                     />
@@ -1309,7 +1341,7 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-1.5 md:col-span-2">
-                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Sub Category / Related Category</label>
+                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-350">Sub Categories (Select Multiple)</label>
                     <input 
                       type="text" 
                       value={subCategory} 
@@ -1320,12 +1352,9 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                     
                     {suggestions.length > 0 && (
                       <div className="mt-2 space-y-1">
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Quick Suggestions:</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {suggestions.filter(s => {
-                            const term = subCategory.split(',').pop()?.trim().toLowerCase() || "";
-                            return s.toLowerCase().includes(term);
-                          }).map(s => {
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Suggestions for selected categories:</p>
+                        <div className="flex flex-wrap gap-2 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-800">
+                          {suggestions.map(s => {
                             const currentList = subCategory.split(',').map(item => item.trim().toLowerCase()).filter(Boolean);
                             const isSelected = currentList.includes(s.toLowerCase().trim());
                             return (
@@ -1341,12 +1370,13 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                                   }
                                 }}
                                 className={cn(
-                                  "px-2 py-1 rounded-lg text-xs font-semibold border transition-all",
+                                  "px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer flex items-center gap-1",
                                   isSelected 
-                                    ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-sm"
-                                    : "bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-655 dark:text-slate-400 border-slate-200 dark:border-slate-800"
+                                    ? "bg-brand-600 text-white border-brand-600 shadow-sm"
+                                    : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 text-slate-700 dark:text-slate-300"
                                 )}
                               >
+                                {isSelected ? <Check className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
                                 {s}
                               </button>
                             );
@@ -1363,7 +1393,7 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                     <div className="space-y-2">
                       <label className="block text-xs font-black uppercase text-slate-400 tracking-widest">Audience</label>
                       <div className="grid grid-cols-2 gap-2">
-                        {['Students', 'Creators', 'Gamers', 'Working Professionals', 'Setup Lovers', 'Everyday Buyers'].map(aud => (
+                        {['Students', 'Creators', 'Gamers', 'Working Professionals', 'Setup Lovers', 'Everyday Buyers', 'Office Goers', 'Laptop Gamers', 'Beginner Creators', 'Budget Seekers', 'Smart Home Enthusiasts'].map(aud => (
                           <label key={aud} className={cn(
                             "flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-bold cursor-pointer transition-all",
                             audience.includes(aud)
@@ -1380,7 +1410,7 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                     <div className="space-y-2">
                       <label className="block text-xs font-black uppercase text-slate-400 tracking-widest">Use Case</label>
                       <div className="grid grid-cols-2 gap-2">
-                        {['Study', 'Gaming', 'Content Creation', 'Desk Setup', 'Productivity', 'Work From Home', 'Travel', 'Lifestyle'].map(uc => (
+                        {['Study', 'Gaming', 'Content Creation', 'Desk Setup', 'Productivity', 'Work From Home', 'Travel', 'Lifestyle', 'Office Work', 'Outdoor Shooting', 'Daily Commute', 'Smart Home', 'Ergonomics', 'Streaming'].map(uc => (
                           <label key={uc} className={cn(
                             "flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-bold cursor-pointer transition-all",
                             useCase.includes(uc)
@@ -1396,10 +1426,21 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-3 border-t border-slate-200/50 dark:border-slate-800">
-                    <div className="space-y-2">
-                      <label className="block text-xs font-black uppercase text-slate-400 tracking-widest">Budget Range</label>
+                    <div className="space-y-2 col-span-2 md:col-span-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-black uppercase text-slate-400 tracking-widest">Budget Range</label>
+                        {currentPrice && (
+                          <button
+                            type="button"
+                            onClick={() => autoSelectBudget(Number(currentPrice))}
+                            className="text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-350 text-[10px] font-black flex items-center gap-1 transition-colors"
+                          >
+                            <Sparkles className="w-3 h-3 animate-pulse" /> Auto-Select From Price
+                          </button>
+                        )}
+                      </div>
                       <div className="flex flex-wrap gap-2">
-                        {['Under ₹500', 'Under ₹1000', 'Under ₹3000', 'Under ₹5000', 'Under ₹10000', 'Premium'].map(br => (
+                        {['Under ₹500', 'Under ₹1000', 'Under ₹1500', 'Under ₹2000', 'Under ₹3000', 'Under ₹5000', 'Under ₹10000', 'Under ₹15000', 'Under ₹20000', 'Premium'].map(br => (
                           <label key={br} className={cn(
                             "flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-bold cursor-pointer transition-all",
                             budgetRange.includes(br)
