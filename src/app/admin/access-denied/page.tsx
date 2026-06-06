@@ -4,7 +4,7 @@ import { ShieldAlert, ArrowLeft, Lock } from "lucide-react";
 export default function AccessDeniedPage() {
   const storeUrl = process.env.NODE_ENV === "development" 
     ? "http://localhost:3000" 
-    : (process.env.NEXT_PUBLIC_STORE_URL || "https://smartxman.vercel.app");
+    : (process.env.NEXT_PUBLIC_STORE_URL || "https://www.smartxman.com");
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col justify-center items-center px-4 py-12">

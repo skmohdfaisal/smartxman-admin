@@ -502,7 +502,7 @@ export default function AdminSeo() {
                   name="canonical_url"
                   value={fields.canonical_url}
                   onChange={handleChange}
-                  placeholder="e.g., https://smartxman.vercel.app/products"
+                  placeholder="e.g., https://www.smartxman.com/products"
                   className="w-full px-4 py-3 bg-slate-50/50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all text-sm text-slate-900 dark:text-white font-mono text-xs"
                 />
               </div>
@@ -773,7 +773,7 @@ export default function AdminSeo() {
               </h4>
               {/* Google-style URL */}
               <p className="text-[12px] text-[#006621] dark:text-green-400 truncate" style={{ fontFamily: "Arial, sans-serif" }}>
-                {fields.canonical_url || "https://smartxman.vercel.app"}
+                {fields.canonical_url || "https://www.smartxman.com"}
               </p>
               {/* Google-style description */}
               <p className="text-[13px] text-[#545454] dark:text-slate-400 line-clamp-2 leading-relaxed" style={{ fontFamily: "Arial, sans-serif" }}>
@@ -809,7 +809,7 @@ export default function AdminSeo() {
               {/* OG text */}
               <div className="p-3 space-y-1 border-t border-slate-100 dark:border-slate-800">
                 <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold truncate">
-                  {(fields.canonical_url || "smartxman.vercel.app").replace(/^https?:\/\//, "").split("/")[0]}
+                  {(fields.canonical_url || "www.smartxman.com").replace(/^https?:\/\//, "").split("/")[0]}
                 </p>
                 <h4 className="text-sm font-bold text-slate-800 dark:text-white line-clamp-2 leading-snug">
                   {fields.og_title || fields.meta_title || "OG Title"}

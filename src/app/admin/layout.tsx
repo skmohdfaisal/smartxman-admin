@@ -22,6 +22,14 @@ import {
 } from "lucide-react";
 import { checkAdmin } from "@/lib/auth";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default async function AdminLayout({
   children,
@@ -32,7 +40,7 @@ export default async function AdminLayout({
   const { user } = await checkAdmin();
   const storeUrl = process.env.NODE_ENV === "development" 
     ? "http://localhost:3000" 
-    : (process.env.NEXT_PUBLIC_STORE_URL || "https://smartxman.vercel.app");
+    : (process.env.NEXT_PUBLIC_STORE_URL || "https://smartxman.com");
 
   const menuSections = [
     {
