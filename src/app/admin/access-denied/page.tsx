@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ShieldAlert, ArrowLeft, Lock } from "lucide-react";
 
 export default function AccessDeniedPage() {
-  const storeUrl = process.env.NEXT_PUBLIC_STORE_URL || "https://smartxman.com";
+  const storeUrl = "https://smartxman.com";
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col justify-center items-center px-4 py-12">

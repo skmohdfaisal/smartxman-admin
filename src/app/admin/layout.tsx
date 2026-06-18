@@ -39,7 +39,7 @@ export default async function AdminLayout({
 }) {
   // Enforce server-side role check before rendering any admin content
   const { user } = await checkAdmin();
-  const storeUrl = process.env.NEXT_PUBLIC_STORE_URL || "https://smartxman.com";
+  const storeUrl = "https://smartxman.com";
 
   const menuSections = [
     {
