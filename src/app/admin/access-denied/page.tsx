@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ShieldAlert, ArrowLeft, Lock } from "lucide-react";
 
 export default function AccessDeniedPage() {
-  const storeUrl = "/api/view-site";
+  const storeUrl = process.env.NEXT_PUBLIC_STORE_URL || "https://smartxman.com";
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col justify-center items-center px-4 py-12">
@@ -21,7 +21,9 @@ export default function AccessDeniedPage() {
 
         <div className="flex flex-col gap-3">
           <a 
-            href={storeUrl} 
+            href={storeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
             className="w-full py-3.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold transition-all shadow-md shadow-brand-500/10 flex items-center justify-center gap-2"
           >
             <ArrowLeft className="w-4 h-4" /> Back to Homepage
