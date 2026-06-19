@@ -421,6 +421,41 @@ export default function NewProduct() {
     setter(prev => prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value]);
   };
 
+  // Audience → auto-category mapping for the 4 homepage "What are you shopping for?" cards
+  const AUDIENCE_CATEGORY_MAP: Record<string, string> = {
+    'Students':               'student-essentials',
+    'Gamers':                 'gaming-setup',
+    'Laptop Gamers':          'gaming-setup',
+    'Creators':               'creator-setup',
+    'Beginner Creators':      'creator-setup',
+    'Working Professionals':  'work-from-home',
+    'Office Goers':           'work-from-home',
+  };
+
+  const handleAudienceSelect = (aud: string) => {
+    const isRemoving = audience.includes(aud);
+    // Toggle audience chip
+    setAudience(prev => isRemoving ? prev.filter(v => v !== aud) : [...prev, aud]);
+
+    const targetSlug = AUDIENCE_CATEGORY_MAP[aud];
+    if (!targetSlug) return; // no mapping for this audience — nothing extra to do
+
+    const targetCat = dbCategories.find(c => c.slug === targetSlug);
+    if (!targetCat) return; // category not loaded yet — skip
+
+    if (isRemoving) {
+      // Only remove the category if NO other selected audience maps to the same category
+      const otherAudiences = audience.filter(a => a !== aud);
+      const stillNeeded = otherAudiences.some(a => AUDIENCE_CATEGORY_MAP[a] === targetSlug);
+      if (!stillNeeded) {
+        setCategory(prev => prev.filter(id => id !== targetCat.id));
+      }
+    } else {
+      // Add the category if not already selected
+      setCategory(prev => prev.includes(targetCat.id) ? prev : [...prev, targetCat.id]);
+    }
+  };
+
   const autoSelectBudget = (priceVal: number) => {
     const ranges: string[] = [];
     if (priceVal <= 500) ranges.push('Under ₹500');
@@ -1303,18 +1338,39 @@ export default function NewProduct() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
                     <div className="space-y-2">
                       <label className="block text-xs font-black uppercase text-slate-400 tracking-widest">Audience</label>
+                      <div className="flex items-start gap-2 px-3 py-2 bg-brand-50 dark:bg-brand-950/20 border border-brand-200 dark:border-brand-900/40 rounded-xl text-[10px] font-bold text-brand-700 dark:text-brand-400 leading-snug">
+                        <span className="text-base leading-none mt-0.5">🏷</span>
+                        <span>Chips marked <strong>AUTO</strong> auto-add the product to the matching homepage category card (<em>Student Setup, Gaming Setup, Work Setup, Creator Setup</em>). Deselecting removes the category only if no other linked audience is active.</span>
+                      </div>
                       <div className="grid grid-cols-2 gap-2">
-                        {['Students', 'Creators', 'Gamers', 'Working Professionals', 'Setup Lovers', 'Everyday Buyers', 'Office Goers', 'Laptop Gamers', 'Beginner Creators', 'Budget Seekers', 'Smart Home Enthusiasts'].map(aud => (
-                          <label key={aud} className={cn(
-                            "flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-bold cursor-pointer transition-all",
-                            audience.includes(aud)
-                              ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-slate-900 dark:border-white shadow-sm"
-                              : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-850 hover:border-slate-350 text-slate-650 dark:text-slate-350"
-                          )}>
-                            <input type="checkbox" checked={audience.includes(aud)} onChange={() => handleMultiSelect(setAudience, aud)} className="hidden" />
-                            <span>{aud}</span>
-                          </label>
-                        ))}
+                        {['Students', 'Creators', 'Gamers', 'Working Professionals', 'Setup Lovers', 'Everyday Buyers', 'Office Goers', 'Laptop Gamers', 'Beginner Creators', 'Budget Seekers', 'Smart Home Enthusiasts'].map(aud => {
+                          const mappedSlug = AUDIENCE_CATEGORY_MAP[aud];
+                          const hasMappedCategory = !!mappedSlug;
+                          return (
+                            <label key={aud} className={cn(
+                              "flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-bold cursor-pointer transition-all relative",
+                              audience.includes(aud)
+                                ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-slate-900 dark:border-white shadow-sm"
+                                : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-850 hover:border-slate-350 text-slate-650 dark:text-slate-350"
+                            )}>
+                              <input type="checkbox" checked={audience.includes(aud)} onChange={() => handleAudienceSelect(aud)} className="hidden" />
+                              <span>{aud}</span>
+                              {hasMappedCategory && (
+                                <span
+                                  title={`Auto-adds to "${mappedSlug}" category`}
+                                  className={cn(
+                                    "ml-auto text-[8px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-full",
+                                    audience.includes(aud)
+                                      ? "bg-white/20 text-white dark:bg-black/20 dark:text-slate-900"
+                                      : "bg-brand-100 text-brand-600 dark:bg-brand-950 dark:text-brand-400"
+                                  )}
+                                >
+                                  🏷 AUTO
+                                </span>
+                              )}
+                            </label>
+                          );
+                        })}
                       </div>
                     </div>
 
