@@ -431,7 +431,14 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
         // Auto fill states
         if (extracted.name) setName(extracted.name);
         if (extracted.brand) setBrand(extracted.brand);
-        if (extracted.price) setPrice(extracted.price);
+        if (extracted.price) {
+          setPrice(extracted.price);
+          const numericPrice = extracted.price.replace(/[^\d.]/g, '');
+          if (numericPrice) {
+            setCurrentPrice(numericPrice);
+            autoSelectBudget(Number(numericPrice));
+          }
+        }
         if (extracted.rating) setRating(extracted.rating);
         if (extracted.image && images.length === 0) setImages([extracted.image]);
       } else {
@@ -1038,7 +1045,7 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                     placeholder="e.g. Logitech MX Master 3S Wireless Mouse" 
                     className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500" 
                   />
-                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-1.5">
                     <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Brand</label>
                     <input 
@@ -1046,16 +1053,6 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                       value={brand} 
                       onChange={(e) => setBrand(e.target.value)} 
                       placeholder="e.g. Logitech" 
-                      className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm" 
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Price Range (Text Reference)</label>
-                    <input 
-                      type="text" 
-                      value={price} 
-                      onChange={(e) => setPrice(e.target.value)} 
-                      placeholder="e.g. ₹8,995" 
                       className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm" 
                     />
                   </div>
@@ -1086,9 +1083,9 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                 </div>
 
                 {/* Manual Pricing Numeric Fields & Status Widget */}
-                <div className="bg-slate-50 dark:bg-slate-800/30 p-5 rounded-2xl border border-slate-200 dark:border-slate-850 grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                <div className="bg-slate-50 dark:bg-slate-800/30 p-5 rounded-2xl border border-slate-200 dark:border-slate-850 grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
                   <div className="space-y-1.5">
-                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Current Numeric Price</label>
+                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Price</label>
                     <input 
                       type="number" 
                       value={currentPrice} 
@@ -1101,16 +1098,6 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                       }} 
                       placeholder="e.g. 8995" 
                       className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm font-black text-brand-600 dark:text-brand-400" 
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Old Numeric Price</label>
-                    <input 
-                      type="number" 
-                      value={oldPrice} 
-                      onChange={(e) => setOldPrice(e.target.value)} 
-                      placeholder="e.g. 9999" 
-                      className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm font-semibold" 
                     />
                   </div>
                   <div className="space-y-2 pt-1.5">
