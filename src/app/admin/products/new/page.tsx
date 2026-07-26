@@ -91,7 +91,6 @@ export default function NewProduct() {
 
   // States: Manual Pricing
   const [currentPrice, setCurrentPrice] = useState("");
-  const [oldPrice, setOldPrice] = useState("");
   const [currency, setCurrency] = useState("INR");
   const [priceIsFresh, setPriceIsFresh] = useState(false);
   const [lastPriceCheckedAt, setLastPriceCheckedAt] = useState("");
@@ -626,7 +625,7 @@ export default function NewProduct() {
         marketplace: marketplace || null,
         import_source: importSource || null,
         current_price: currentPrice ? parseFloat(currentPrice) : null,
-        old_price: oldPrice ? parseFloat(oldPrice) : null,
+        old_price: null,
         currency: currency || 'INR',
         price_is_fresh: priceIsFresh,
         last_price_checked_at: lastPriceCheckedAt ? new Date(lastPriceCheckedAt).toISOString() : null,

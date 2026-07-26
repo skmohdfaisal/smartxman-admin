@@ -94,7 +94,7 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
 
   // States: Manual Pricing
   const [currentPrice, setCurrentPrice] = useState("");
-  const [oldPrice, setOldPrice] = useState("");
+
   const [currency, setCurrency] = useState("INR");
   const [priceIsFresh, setPriceIsFresh] = useState(false);
   const [lastPriceCheckedAt, setLastPriceCheckedAt] = useState("");
@@ -323,7 +323,7 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
         setMarketplace(data.marketplace || "www.amazon.in");
         setImportSource(data.import_source || "manual");
         setCurrentPrice(data.current_price !== null && data.current_price !== undefined ? data.current_price.toString() : "");
-        setOldPrice(data.old_price !== null && data.old_price !== undefined ? data.old_price.toString() : "");
+
         setCurrency(data.currency || "INR");
         setPriceIsFresh(data.price_is_fresh || false);
         setLastPriceCheckedAt(data.last_price_checked_at || "");
@@ -671,7 +671,7 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
         marketplace: marketplace || null,
         import_source: importSource || null,
         current_price: currentPrice ? parseFloat(currentPrice) : null,
-        old_price: oldPrice ? parseFloat(oldPrice) : null,
+        old_price: null,
         currency: currency || 'INR',
         price_is_fresh: priceIsFresh,
         last_price_checked_at: lastPriceCheckedAt ? new Date(lastPriceCheckedAt).toISOString() : null,
