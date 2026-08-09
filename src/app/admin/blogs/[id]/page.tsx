@@ -39,7 +39,7 @@ import {
   Clock,
   Check
 } from "lucide-react";
-import { getBlogById, saveBlog, getProductsList } from "../actions";
+import { getBlogById, saveBlog, getProductsList, generateSeoMetadata } from "../actions";
 import { supabase } from "@/lib/supabase";
 
 interface ReferenceLink {
@@ -94,6 +94,7 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
   const [visibility, setVisibility] = useState("public");
   const [featured, setFeatured] = useState(false);
   const [showOnHomepage, setShowOnHomepage] = useState(false);
+  const [isPopular, setIsPopular] = useState(false);
 
   // Cover image states
   const [coverImageUrl, setCoverImageUrl] = useState("");
@@ -113,6 +114,12 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
   const [ogDescription, setOgDescription] = useState("");
   const [ogImageUrl, setOgImageUrl] = useState("");
   const [focusKeyword, setFocusKeyword] = useState("");
+  const [primaryKeyword, setPrimaryKeyword] = useState("");
+  const [secondaryKeywords, setSecondaryKeywords] = useState("");
+  const [searchIntent, setSearchIntent] = useState("");
+  const [targetAudience, setTargetAudience] = useState("");
+  const [authorBio, setAuthorBio] = useState("");
+  const [authorImage, setAuthorImage] = useState("");
   const [noindex, setNoindex] = useState(false);
 
   // Arrays (Product Blocks & FAQs)
@@ -180,6 +187,7 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
         setVisibility(blog.visibility || "public");
         setFeatured(!!blog.featured);
         setShowOnHomepage(!!blog.show_on_homepage);
+        setIsPopular(!!blog.is_popular);
 
         // Cover Image mapping
         setCoverImageUrl(blog.cover_image_url || blog.cover_image || "");
@@ -197,6 +205,12 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
         setSeoDescription(blog.seo_description || "");
         setCanonicalUrl(blog.canonical_url || "");
         setFocusKeyword(blog.focus_keyword || "");
+        setPrimaryKeyword(blog.primary_keyword || blog.focus_keyword || "");
+        setSecondaryKeywords(blog.secondary_keywords || "");
+        setSearchIntent(blog.search_intent || "");
+        setTargetAudience(blog.target_audience || "");
+        setAuthorBio(blog.author_bio || "");
+        setAuthorImage(blog.author_image || "");
         setNoindex(!!blog.noindex);
         setOgTitle(blog.og_title || "");
         setOgDescription(blog.og_description || "");
@@ -465,6 +479,8 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
         visibility,
         featured,
         show_on_homepage: showOnHomepage,
+        is_popular: isPopular,
+        view_count: 0,
         cover_image_url: coverImageUrl,
         cover_image: coverImageUrl, // Legacy compatibility alias
         cover_image_alt: coverImageAlt,
@@ -477,6 +493,12 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
         og_description: ogDescription || seoDescription || excerpt,
         og_image: ogImageUrl || coverImageUrl,
         focus_keyword: focusKeyword,
+        primary_keyword: primaryKeyword || focusKeyword,
+        secondary_keywords: secondaryKeywords,
+        search_intent: searchIntent,
+        target_audience: targetAudience,
+        author_bio: authorBio,
+        author_image: authorImage,
         noindex,
         faqs,
         product_blocks: productBlocks,
@@ -497,6 +519,30 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
       setError(err.message || "An error occurred during save.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // AI SEO Generator
+  const [generatingSeo, setGeneratingSeo] = useState(false);
+  const handleGenerateSEO = async () => {
+    if (!title && !excerpt) {
+      alert("Please provide a Title and Excerpt first to generate SEO metadata.");
+      return;
+    }
+    setGeneratingSeo(true);
+    try {
+      const res = await generateSeoMetadata(title, excerpt, focusKeyword);
+      if (res.success) {
+        setSeoTitle(res.seoTitle || "");
+        setSeoDescription(res.seoDescription || "");
+        setSuccessMsg("SEO Metadata auto-generated!");
+        setTimeout(() => setSuccessMsg(""), 3000);
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError("Failed to generate SEO: " + err.message);
+    } finally {
+      setGeneratingSeo(false);
     }
   };
 
@@ -701,6 +747,34 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
                     onChange={(e) => setAuthor(e.target.value)}
                     placeholder="e.g., Admin"
                     className="w-full px-4 py-3 bg-slate-50/50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all text-sm text-slate-900 dark:text-white"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Author Image URL
+                  </label>
+                  <input
+                    type="text"
+                    value={authorImage}
+                    onChange={(e) => setAuthorImage(e.target.value)}
+                    placeholder="e.g., https://smartxman.com/author.jpg"
+                    className="w-full px-4 py-3 bg-slate-50/50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all text-sm font-mono text-slate-700 dark:text-slate-300"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Author Bio
+                  </label>
+                  <input
+                    type="text"
+                    value={authorBio}
+                    onChange={(e) => setAuthorBio(e.target.value)}
+                    placeholder="Short author bio for E-E-A-T..."
+                    className="w-full px-4 py-3 bg-slate-50/50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all text-sm text-slate-700 dark:text-slate-300"
                   />
                 </div>
               </div>
@@ -1382,6 +1456,16 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
                   />
                   Show on Homepage feeds
                 </label>
+
+                <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isPopular}
+                    onChange={(e) => setIsPopular(e.target.checked)}
+                    className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 focus:ring-offset-0"
+                  />
+                  Mark as Popular Guide
+                </label>
               </div>
             </div>
 
@@ -1406,20 +1490,66 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
 
           {/* SIDEBAR CARD 2: SEO Settings */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800/85 p-5 shadow-sm space-y-4">
-            <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-brand-500" />
-              SEO Settings
-            </h3>
+            <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-2">
+              <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-brand-500" />
+                SEO Settings
+              </h3>
+              <button
+                type="button"
+                onClick={handleGenerateSEO}
+                disabled={generatingSeo}
+                className="px-3 py-1.5 bg-brand-50 text-brand-600 hover:bg-brand-100 dark:bg-brand-900/30 dark:hover:bg-brand-900/50 rounded-lg text-xs font-bold transition-colors flex items-center gap-1"
+                title="Auto-generate Title & Meta Description based on content"
+              >
+                {generatingSeo ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                Auto
+              </button>
+            </div>
 
             <div className="space-y-3.5 pt-2">
-              {/* Focus Keyword */}
+              {/* Keywords & Intent */}
               <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Focus Keyword</label>
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Primary / Focus Keyword</label>
                 <input
                   type="text"
                   value={focusKeyword}
-                  onChange={(e) => setFocusKeyword(e.target.value)}
+                  onChange={(e) => { setFocusKeyword(e.target.value); setPrimaryKeyword(e.target.value); }}
                   placeholder="e.g., standing desk setup"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Secondary Keywords</label>
+                <input
+                  type="text"
+                  value={secondaryKeywords}
+                  onChange={(e) => setSecondaryKeywords(e.target.value)}
+                  placeholder="e.g., best standing desks, ergonomic setup"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Search Intent</label>
+                <select
+                  value={searchIntent}
+                  onChange={(e) => setSearchIntent(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold"
+                >
+                  <option value="">Select Intent...</option>
+                  <option value="Informational">Informational</option>
+                  <option value="Navigational">Navigational</option>
+                  <option value="Commercial">Commercial (Investigation)</option>
+                  <option value="Transactional">Transactional</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Target Audience</label>
+                <input
+                  type="text"
+                  value={targetAudience}
+                  onChange={(e) => setTargetAudience(e.target.value)}
+                  placeholder="e.g., Students, Remote Workers, Gamers"
                   className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
                 />
               </div>
@@ -1512,7 +1642,7 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
           <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800/85 p-5 shadow-sm space-y-4">
             <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
               <FileCheck className="w-4 h-4 text-brand-500" />
-              Blog Health Score
+              Blog Health & Quality
             </h3>
 
             <div className="flex flex-col items-center justify-center py-4 space-y-3">
@@ -1529,6 +1659,57 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
                 <p className="text-[10px] text-slate-400 max-w-[200px] mx-auto mt-1">
                   Fill in title, tags, cover description, meta data, and product blocks to maximize your post visibility.
                 </p>
+              </div>
+            </div>
+
+            {/* Content Quality Checklist */}
+            <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+              <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Pre-Publish Checklist</h4>
+              <div className="space-y-2 text-xs font-medium">
+                <div className="flex items-center gap-2">
+                  {searchIntent ? <CheckCircle className="w-3.5 h-3.5 text-green-500" /> : <X className="w-3.5 h-3.5 text-slate-300" />}
+                  <span className={searchIntent ? "text-slate-700 dark:text-slate-300" : "text-slate-400"}>Clear search intent</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {excerpt.length >= 40 ? <CheckCircle className="w-3.5 h-3.5 text-green-500" /> : <X className="w-3.5 h-3.5 text-slate-300" />}
+                  <span className={excerpt.length >= 40 ? "text-slate-700 dark:text-slate-300" : "text-slate-400"}>Helpful introduction (excerpt)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {content.length >= 300 ? <CheckCircle className="w-3.5 h-3.5 text-green-500" /> : <X className="w-3.5 h-3.5 text-slate-300" />}
+                  <span className={content.length >= 300 ? "text-slate-700 dark:text-slate-300" : "text-slate-400"}>Original analysis (content depth)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {focusKeyword ? <CheckCircle className="w-3.5 h-3.5 text-green-500" /> : <X className="w-3.5 h-3.5 text-slate-300" />}
+                  <span className={focusKeyword ? "text-slate-700 dark:text-slate-300" : "text-slate-400"}>Primary keyword</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {secondaryKeywords ? <CheckCircle className="w-3.5 h-3.5 text-green-500" /> : <X className="w-3.5 h-3.5 text-slate-300" />}
+                  <span className={secondaryKeywords ? "text-slate-700 dark:text-slate-300" : "text-slate-400"}>Supporting keywords</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {content.includes("##") || content.includes("###") ? <CheckCircle className="w-3.5 h-3.5 text-green-500" /> : <X className="w-3.5 h-3.5 text-slate-300" />}
+                  <span className={content.includes("##") || content.includes("###") ? "text-slate-700 dark:text-slate-300" : "text-slate-400"}>Useful headings (H2/H3)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {productBlocks.length > 0 ? <CheckCircle className="w-3.5 h-3.5 text-green-500" /> : <X className="w-3.5 h-3.5 text-slate-300" />}
+                  <span className={productBlocks.length > 0 ? "text-slate-700 dark:text-slate-300" : "text-slate-400"}>Relevant product links</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {author && authorBio ? <CheckCircle className="w-3.5 h-3.5 text-green-500" /> : <X className="w-3.5 h-3.5 text-slate-300" />}
+                  <span className={author && authorBio ? "text-slate-700 dark:text-slate-300" : "text-slate-400"}>Author details (E-E-A-T)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {coverImageUrl && coverImageAlt ? <CheckCircle className="w-3.5 h-3.5 text-green-500" /> : <X className="w-3.5 h-3.5 text-slate-300" />}
+                  <span className={coverImageUrl && coverImageAlt ? "text-slate-700 dark:text-slate-300" : "text-slate-400"}>Image & alt text</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {seoTitle && seoDescription ? <CheckCircle className="w-3.5 h-3.5 text-green-500" /> : <X className="w-3.5 h-3.5 text-slate-300" />}
+                  <span className={seoTitle && seoDescription ? "text-slate-700 dark:text-slate-300" : "text-slate-400"}>Meta title & description</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {faqs.length > 0 ? <CheckCircle className="w-3.5 h-3.5 text-green-500" /> : <X className="w-3.5 h-3.5 text-slate-300" />}
+                  <span className={faqs.length > 0 ? "text-slate-700 dark:text-slate-300" : "text-slate-400"}>FAQ Schema</span>
+                </div>
               </div>
             </div>
           </div>

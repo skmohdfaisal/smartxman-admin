@@ -169,6 +169,8 @@ export async function saveBlog(blogData: any) {
       visibility: blogData.visibility || "public",
       featured: !!blogData.featured,
       show_on_homepage: !!blogData.show_on_homepage,
+      is_popular: !!blogData.is_popular,
+      view_count: blogData.view_count || 0,
       seo_title: blogData.seo_title || "",
       seo_description: blogData.seo_description || "",
       canonical_url: blogData.canonical_url || "",
@@ -176,6 +178,12 @@ export async function saveBlog(blogData: any) {
       og_description: blogData.og_description || "",
       og_image: blogData.og_image || "",
       focus_keyword: blogData.focus_keyword || "",
+      primary_keyword: blogData.primary_keyword || blogData.focus_keyword || "",
+      secondary_keywords: blogData.secondary_keywords || "",
+      search_intent: blogData.search_intent || "",
+      target_audience: blogData.target_audience || "",
+      author_bio: blogData.author_bio || "",
+      author_image: blogData.author_image || "",
       noindex: !!blogData.noindex,
       faqs: blogData.faqs || [],
       product_blocks: blogData.product_blocks || [],
@@ -255,6 +263,8 @@ export async function saveBlog(blogData: any) {
       visibility: blogData.visibility || "public",
       featured: !!blogData.featured,
       show_on_homepage: !!blogData.show_on_homepage,
+      is_popular: !!blogData.is_popular,
+      view_count: blogData.view_count || 0,
       seo_title: blogData.seo_title || "",
       seo_description: blogData.seo_description || "",
       canonical_url: blogData.canonical_url || "",
@@ -262,6 +272,12 @@ export async function saveBlog(blogData: any) {
       og_description: blogData.og_description || "",
       og_image: blogData.og_image || "",
       focus_keyword: blogData.focus_keyword || "",
+      primary_keyword: blogData.primary_keyword || blogData.focus_keyword || "",
+      secondary_keywords: blogData.secondary_keywords || "",
+      search_intent: blogData.search_intent || "",
+      target_audience: blogData.target_audience || "",
+      author_bio: blogData.author_bio || "",
+      author_image: blogData.author_image || "",
       noindex: !!blogData.noindex,
       faqs: blogData.faqs || [],
       product_blocks: blogData.product_blocks || [],
@@ -346,6 +362,60 @@ export async function getProductsList() {
   } catch (err: any) {
     console.error("Failed to fetch products for blog builder:", err.message);
     return { success: true, data: [] };
+  }
+}
+
+export async function generateSeoMetadata(title: string, excerpt: string, keyword: string) {
+  try {
+    const apiKey = process.env.NEXT_PUBLIC_GROQ_API_KEY;
+    if (!apiKey) {
+      // Fallback heuristic if no API key
+      const baseTitle = `${title.substring(0, 45)} | smartXman`;
+      const baseDesc = excerpt.substring(0, 157) + "...";
+      return { success: true, seoTitle: baseTitle, seoDescription: baseDesc };
+    }
+
+    const prompt = `You are an expert SEO architect. 
+Generate an SEO Title (under 60 chars) and an SEO Meta Description (under 160 chars) for this article.
+Target keyword: ${keyword || 'none'}
+Article Title: ${title}
+Article Excerpt: ${excerpt}
+Respond ONLY in JSON format: {"seoTitle": "...", "seoDescription": "..."}`;
+
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: "llama3-8b-8192",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        temperature: 0.3
+      })
+    });
+
+    if (!res.ok) {
+      throw new Error("Failed to connect to Groq API");
+    }
+
+    const data = await res.json();
+    const parsed = JSON.parse(data.choices[0].message.content);
+    
+    return { 
+      success: true, 
+      seoTitle: parsed.seoTitle || `${title.substring(0, 45)} | smartXman`, 
+      seoDescription: parsed.seoDescription || excerpt.substring(0, 157) + "..."
+    };
+
+  } catch (err: any) {
+    console.error("SEO Generation failed:", err);
+    return { 
+      success: true, 
+      seoTitle: `${title.substring(0, 45)} | smartXman`, 
+      seoDescription: excerpt.substring(0, 157) + "..."
+    };
   }
 }
 
