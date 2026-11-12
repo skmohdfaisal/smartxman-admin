@@ -16,7 +16,8 @@ const defaultSettings = {
   primary_cta_text: "Explore Smart Picks",
   primary_cta_link: "/products",
   why_smartxman_title: "Why Smartxman?",
-  why_smartxman_desc: "We review tech and gear without bias, focusing entirely on value and your workflow."
+  why_smartxman_desc: "We review tech and gear without bias, focusing entirely on value and your workflow.",
+  hero_showcase_slugs: [] as string[], // Up to 3 product slugs for the hero showcase
 };
 
 export async function getHomepageSettings() {
@@ -64,6 +65,9 @@ export async function saveHomepageSettings(settings: any) {
       primary_cta_link: settings.primary_cta_link || defaultSettings.primary_cta_link,
       why_smartxman_title: settings.why_smartxman_title || defaultSettings.why_smartxman_title,
       why_smartxman_desc: settings.why_smartxman_desc || defaultSettings.why_smartxman_desc,
+      hero_showcase_slugs: Array.isArray(settings.hero_showcase_slugs)
+        ? settings.hero_showcase_slugs.filter(Boolean).slice(0, 3)
+        : [],
       updated_at: new Date().toISOString()
     };
 

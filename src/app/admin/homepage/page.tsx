@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { getHomepageSettings, saveHomepageSettings } from "./actions";
-import { Sparkles, Home, Save, Loader2, RefreshCw, CheckCircle2, Monitor } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { Sparkles, Home, Save, Loader2, RefreshCw, CheckCircle2, Monitor, Package, X, GripVertical, Search } from "lucide-react";
+import Image from "next/image";
 
 export default function AdminHomepage() {
   const [settings, setSettings] = useState<any>({
@@ -14,15 +16,22 @@ export default function AdminHomepage() {
     primary_cta_text: "",
     primary_cta_link: "",
     why_smartxman_title: "",
-    why_smartxman_desc: ""
+    why_smartxman_desc: "",
+    hero_showcase_slugs: [] as string[],
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [dbSource, setDbSource] = useState("");
 
+  // Product picker state
+  const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [productSearch, setProductSearch] = useState("");
+  const [showcaseSlugs, setShowcaseSlugs] = useState<string[]>([]);
+
   useEffect(() => {
     loadSettings();
+    loadProducts();
   }, []);
 
   const loadSettings = async () => {
@@ -31,8 +40,18 @@ export default function AdminHomepage() {
     if (res.success && res.data) {
       setSettings(res.data);
       setDbSource(res.source || "default");
+      setShowcaseSlugs(Array.isArray(res.data.hero_showcase_slugs) ? res.data.hero_showcase_slugs : []);
     }
     setLoading(false);
+  };
+
+  const loadProducts = async () => {
+    const { data } = await supabase
+      .from("products")
+      .select("id, name, slug, images, price_range, brand, status, is_active, featured, primary_category:categories!products_primary_category_id_fkey(name)")
+      .eq("status", "published")
+      .order("name", { ascending: true });
+    setAllProducts((data || []).filter((p: any) => p.is_active !== false));
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -44,15 +63,39 @@ export default function AdminHomepage() {
     e.preventDefault();
     setSaving(true);
     setMessage(null);
-    const res = await saveHomepageSettings(settings);
+    const payload = { ...settings, hero_showcase_slugs: showcaseSlugs };
+    const res = await saveHomepageSettings(payload);
     if (res.success) {
-      setMessage({ type: "success", text: "Homepage settings successfully updated!" });
+      setMessage({ type: "success", text: "Homepage settings saved! Hero showcase updated." });
       setDbSource(res.source || "local");
     } else {
       setMessage({ type: "error", text: res.error || "Failed to save settings." });
     }
     setSaving(false);
   };
+
+  const toggleShowcaseProduct = (slug: string) => {
+    setShowcaseSlugs((prev) => {
+      if (prev.includes(slug)) return prev.filter((s) => s !== slug);
+      if (prev.length >= 3) return prev; // Max 3
+      return [...prev, slug];
+    });
+  };
+
+  const removeShowcaseSlug = (slug: string) => {
+    setShowcaseSlugs((prev) => prev.filter((s) => s !== slug));
+  };
+
+  const filteredProducts = allProducts.filter(
+    (p) =>
+      p.name?.toLowerCase().includes(productSearch.toLowerCase()) ||
+      p.brand?.toLowerCase().includes(productSearch.toLowerCase()) ||
+      p.slug?.toLowerCase().includes(productSearch.toLowerCase())
+  );
+
+  const showcaseProducts = showcaseSlugs
+    .map((slug) => allProducts.find((p) => p.slug === slug))
+    .filter(Boolean);
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">
@@ -246,6 +289,103 @@ export default function AdminHomepage() {
                   placeholder="Outline bias-free reviews value proposition..."
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
                 />
+              </div>
+
+              {/* ── Hero Showcase Product Picker ── */}
+              <div className="border-t border-slate-100 dark:border-slate-800 pt-6">
+                <h2 className="text-xl font-black text-slate-900 dark:text-white pb-1 flex items-center gap-2">
+                  <Package className="w-5 h-5 text-brand-600" />
+                  Hero Showcase Products
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+                  Pick up to <strong>3 real products</strong> from your catalog to show in the hero section. If none selected, the system auto-picks your top Featured products.
+                </p>
+
+                {/* Current showcase slot display */}
+                <div className="flex flex-wrap gap-2 mb-4 min-h-[2.5rem]">
+                  {showcaseSlugs.length === 0 ? (
+                    <span className="text-xs text-slate-400 italic px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-lg border border-dashed border-slate-200 dark:border-slate-800">
+                      No products pinned — auto-picks your featured products
+                    </span>
+                  ) : (
+                    showcaseSlugs.map((slug, idx) => {
+                      const p = allProducts.find((x) => x.slug === slug);
+                      return (
+                        <div key={slug} className="inline-flex items-center gap-2 px-3 py-1.5 bg-brand-50 dark:bg-brand-950/30 border border-brand-200 dark:border-brand-800/60 rounded-lg text-xs font-bold text-brand-700 dark:text-brand-300">
+                          <span className="text-brand-400 font-black">#{idx + 1}</span>
+                          {p?.images?.[0] && (
+                            <Image src={p.images[0]} alt={p.name} width={20} height={20} className="rounded object-contain" />
+                          )}
+                          <span className="truncate max-w-[140px]">{p?.name || slug}</span>
+                          <button type="button" onClick={() => removeShowcaseSlug(slug)} className="text-brand-400 hover:text-red-500 transition-colors ml-1">
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                {/* Product search + list */}
+                <div className="relative mb-2">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="text"
+                    value={productSearch}
+                    onChange={(e) => setProductSearch(e.target.value)}
+                    placeholder="Search products by name or brand…"
+                    className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                  />
+                </div>
+                <div className="max-h-64 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800">
+                  {filteredProducts.length === 0 ? (
+                    <div className="p-4 text-xs text-slate-400 text-center">No published products found</div>
+                  ) : (
+                    filteredProducts.map((p) => {
+                      const isSelected = showcaseSlugs.includes(p.slug);
+                      const isDisabled = !isSelected && showcaseSlugs.length >= 3;
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => toggleShowcaseProduct(p.slug)}
+                          disabled={isDisabled}
+                          className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
+                            isSelected
+                              ? "bg-brand-50 dark:bg-brand-950/20"
+                              : isDisabled
+                              ? "opacity-40 cursor-not-allowed bg-white dark:bg-slate-900"
+                              : "hover:bg-slate-50 dark:hover:bg-slate-900/60 bg-white dark:bg-slate-900"
+                          }`}
+                        >
+                          <div className="relative w-10 h-10 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 shrink-0 overflow-hidden">
+                            {p.images?.[0] ? (
+                              <Image src={p.images[0]} alt={p.name} fill sizes="40px" style={{ objectFit: "contain" }} className="p-1" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-slate-300">
+                                <Package className="w-4 h-4" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-bold text-slate-900 dark:text-white truncate">{p.name}</div>
+                            <div className="text-xs text-slate-400 flex items-center gap-2">
+                              <span>{p.primary_category?.name || "Tech"}</span>
+                              {p.price_range && <span className="font-semibold text-brand-600 dark:text-brand-400">{p.price_range}</span>}
+                              {p.featured && <span className="px-1.5 py-0.5 bg-amber-50 border border-amber-200 text-amber-700 rounded text-[9px] font-black uppercase tracking-wide">Featured</span>}
+                            </div>
+                          </div>
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${isSelected ? "bg-brand-600 border-brand-600" : "border-slate-300 dark:border-slate-700"}`}>
+                            {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
+                          </div>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-400 mt-2">
+                  {showcaseSlugs.length}/3 slots used · Save below to apply changes to the live homepage
+                </p>
               </div>
 
               <button
