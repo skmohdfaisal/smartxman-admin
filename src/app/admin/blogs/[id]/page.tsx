@@ -463,13 +463,20 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
     setError("");
     setSuccessMsg("");
 
+    if (!title || !title.trim()) {
+      setError("Please provide an article title before publishing.");
+      setLoading(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
     const targetStatus = forceStatus || status;
 
     try {
       const payload = {
         id: isNew ? undefined : id,
-        title,
-        slug,
+        title: title.trim(),
+        slug: slug.trim() || undefined,
         category,
         read_time: readTime,
         excerpt,
@@ -507,16 +514,18 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
 
       const res = await saveBlog(payload);
       if (res.success) {
-        setSuccessMsg("Blog saved successfully!");
+        setSuccessMsg(targetStatus === "published" ? "Blog published successfully! Redirecting..." : "Blog saved successfully! Redirecting...");
         setTimeout(() => {
           router.push("/admin/blogs");
           router.refresh();
-        }, 1000);
+        }, 1200);
       } else {
         setError(res.error || "Failed to save blog post.");
+        window.scrollTo({ top: 0, behavior: "smooth" });
       }
     } catch (err: any) {
       setError(err.message || "An error occurred during save.");
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setLoading(false);
     }

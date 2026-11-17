@@ -1,48 +1,10 @@
 "use server";
 
 import { supabase } from "@/lib/supabase";
-import fs from "fs";
-import path from "path";
+import { revalidatePath } from "next/cache";
 
-const JSON_DB_PATH = path.resolve(process.cwd(), "src/lib/blogs_db.json");
-
-// Helper to read local JSON fallback
-function readLocalBlogs(): any[] {
-  try {
-    if (fs.existsSync(JSON_DB_PATH)) {
-      const data = fs.readFileSync(JSON_DB_PATH, "utf-8");
-      return JSON.parse(data);
-    }
-  } catch (err) {
-    console.error("Failed to read local blogs fallback:", err);
-  }
-  return [];
-}
-
-// Helper to write local JSON fallback
-function writeLocalBlogs(blogs: any[]): boolean {
-  try {
-    fs.writeFileSync(JSON_DB_PATH, JSON.stringify(blogs, null, 2), "utf-8");
-    
-    // Also write to sibling path for public app to remain completely synchronized
-    try {
-      const siblingPath = path.resolve(process.cwd(), "../smartxman/src/lib/blogs_db.json");
-      if (fs.existsSync(path.dirname(siblingPath))) {
-        fs.writeFileSync(siblingPath, JSON.stringify(blogs, null, 2), "utf-8");
-      }
-    } catch (siblingErr) {
-      console.warn("Failed to write to sibling blog JSON database:", siblingErr);
-    }
-    
-    return true;
-  } catch (err) {
-    console.error("Failed to write local blogs fallback:", err);
-    return false;
-  }
-}
-
-// Helper to wrap Supabase calls in a timeout
-async function withTimeout<T>(promise: any, timeoutMs: number = 3000): Promise<T> {
+// Helper to wrap Supabase calls in a safe timeout (15s)
+async function withTimeout<T>(promise: any, timeoutMs: number = 15000): Promise<T> {
   let timeoutId: NodeJS.Timeout;
   const timeoutPromise = new Promise<never>((_, reject) => {
     timeoutId = setTimeout(() => {
@@ -68,17 +30,13 @@ export async function getBlogs() {
     const { data, error } = result;
 
     if (error) {
-      // If table missing, fallback to JSON
-      if (error.code === "PGRST205" || error.message.includes("relation \"public.blogs\" does not exist")) {
-        console.warn("Supabase blogs table missing, falling back to local database.");
-        return { success: true, data: readLocalBlogs(), source: "local" };
-      }
-      throw error;
+      console.error("Supabase getBlogs error:", error);
+      return { success: false, error: error.message, data: [], source: "error" };
     }
     return { success: true, data: data || [], source: "supabase" };
   } catch (err: any) {
-    console.error("Supabase fetch failed, falling back to local:", err.message);
-    return { success: true, data: readLocalBlogs(), source: "local" };
+    console.error("getBlogs exception:", err);
+    return { success: false, error: err.message, data: [], source: "error" };
   }
 }
 
@@ -94,19 +52,12 @@ export async function getBlogBySlug(slug: string) {
     const { data, error } = result;
 
     if (error) {
-      if (error.code === "PGRST205" || error.message.includes("relation \"public.blogs\" does not exist")) {
-        const local = readLocalBlogs();
-        const found = local.find((b) => b.slug === slug);
-        return { success: !!found, data: found || null, source: "local" };
-      }
-      throw error;
+      return { success: false, error: error.message, data: null };
     }
     return { success: true, data, source: "supabase" };
   } catch (err: any) {
-    console.error("Supabase single fetch failed, trying local:", err.message);
-    const local = readLocalBlogs();
-    const found = local.find((b) => b.slug === slug);
-    return { success: !!found, data: found || null, source: "local" };
+    console.error("Supabase single fetch by slug failed:", err.message);
+    return { success: false, error: err.message, data: null };
   }
 }
 
@@ -122,61 +73,65 @@ export async function getBlogById(id: string) {
     const { data, error } = result;
 
     if (error) {
-      if (error.code === "PGRST205" || error.message.includes("relation \"public.blogs\" does not exist")) {
-        const local = readLocalBlogs();
-        const found = local.find((b) => b.id === id);
-        return { success: !!found, data: found || null, source: "local" };
-      }
-      throw error;
+      return { success: false, error: error.message, data: null };
     }
     return { success: true, data, source: "supabase" };
   } catch (err: any) {
-    console.error("Supabase single fetch failed, trying local:", err.message);
-    const local = readLocalBlogs();
-    const found = local.find((b) => b.id === id);
-    return { success: !!found, data: found || null, source: "local" };
+    console.error("Supabase single fetch by id failed:", err.message);
+    return { success: false, error: err.message, data: null };
   }
 }
 
 export async function saveBlog(blogData: any) {
-  // Ensure slug is clean
-  if (blogData.title && !blogData.slug) {
-    blogData.slug = blogData.title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
-  }
-
-  // Ensure cover_image fallback
-  const finalCoverImage = blogData.cover_image_url || blogData.cover_image || "/categories/tech.png";
-
   try {
+    if (!blogData.title || !blogData.title.trim()) {
+      return { success: false, error: "Title is required to save a blog post." };
+    }
+
+    // Ensure slug is clean
+    let slug = blogData.slug;
+    if (!slug || !slug.trim()) {
+      slug = blogData.title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+    } else {
+      slug = slug
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+    }
+
+    // Ensure cover_image fallback
+    const finalCoverImage = blogData.cover_image_url || blogData.cover_image || "/categories/tech.png";
     const isNew = !blogData.id;
+
+    // Build clean payload strictly matching Supabase blogs schema (no non-existent columns)
     const payload: any = {
-      title: blogData.title,
-      slug: blogData.slug,
+      title: blogData.title.trim(),
+      slug: slug,
       cover_image_url: finalCoverImage,
-      cover_image: finalCoverImage, // compatibility legacy alias
+      cover_image: finalCoverImage,
       cover_image_alt: blogData.cover_image_alt || "",
       cover_image_caption: blogData.cover_image_caption || "",
-      content: blogData.content,
+      content: blogData.content || "",
       category: blogData.category || "Buying Guides",
       excerpt: blogData.excerpt || "",
       read_time: blogData.read_time || "5 min read",
       author: blogData.author || "Admin",
-      tags: blogData.tags || [],
+      tags: Array.isArray(blogData.tags) ? blogData.tags : [],
       status: blogData.status || "draft",
       visibility: blogData.visibility || "public",
       featured: !!blogData.featured,
       show_on_homepage: !!blogData.show_on_homepage,
       is_popular: !!blogData.is_popular,
-      view_count: blogData.view_count || 0,
+      view_count: Number(blogData.view_count) || 0,
       seo_title: blogData.seo_title || "",
       seo_description: blogData.seo_description || "",
       canonical_url: blogData.canonical_url || "",
-      og_title: blogData.og_title || "",
-      og_description: blogData.og_description || "",
-      og_image: blogData.og_image || "",
+      og_title: blogData.og_title || blogData.seo_title || blogData.title || "",
+      og_description: blogData.og_description || blogData.seo_description || blogData.excerpt || "",
+      og_image: blogData.og_image || finalCoverImage,
       focus_keyword: blogData.focus_keyword || "",
       primary_keyword: blogData.primary_keyword || blogData.focus_keyword || "",
       secondary_keywords: blogData.secondary_keywords || "",
@@ -185,9 +140,8 @@ export async function saveBlog(blogData: any) {
       author_bio: blogData.author_bio || "",
       author_image: blogData.author_image || "",
       noindex: !!blogData.noindex,
-      faqs: blogData.faqs || [],
-      product_blocks: blogData.product_blocks || [],
-      reference_links: blogData.reference_links || [], // legacy
+      faqs: Array.isArray(blogData.faqs) ? blogData.faqs : [],
+      product_blocks: Array.isArray(blogData.product_blocks) ? blogData.product_blocks : [],
       updated_at: new Date().toISOString()
     };
 
@@ -198,7 +152,7 @@ export async function saveBlog(blogData: any) {
     if (blogData.status === "published") {
       payload.published_at = blogData.published_at || new Date().toISOString();
     } else {
-      payload.published_at = blogData.published_at || null;
+      payload.published_at = null;
     }
 
     let result;
@@ -213,109 +167,36 @@ export async function saveBlog(blogData: any) {
     }
 
     if (result.error) {
-      if (result.error.code === "PGRST205" || result.error.message.includes("relation \"public.blogs\" does not exist")) {
-        console.warn("Supabase insert/update failed, performing fallback save.");
-        const local = readLocalBlogs();
-        if (isNew) {
-          const newBlog = {
-            ...payload,
-            id: String(local.length + 1),
-          };
-          local.push(newBlog);
-          writeLocalBlogs(local);
-          return { success: true, data: newBlog, source: "local" };
-        } else {
-          const index = local.findIndex((b) => b.id === blogData.id);
-          if (index !== -1) {
-            const updatedBlog = {
-              ...local[index],
-              ...payload,
-            };
-            local[index] = updatedBlog;
-            writeLocalBlogs(local);
-            return { success: true, data: updatedBlog, source: "local" };
-          }
-          throw new Error("Local blog not found to update");
-        }
-      }
-      throw result.error;
+      console.error("Supabase blog save failed:", result.error);
+      return { success: false, error: result.error.message || "Failed to save blog post to database." };
     }
 
-    return { success: true, data: result.data?.[0], source: "supabase" };
+    const savedBlog = result.data?.[0];
+
+    // Revalidate admin pages
+    try {
+      revalidatePath("/admin/blogs");
+      if (savedBlog?.id) {
+        revalidatePath(`/admin/blogs/${savedBlog.id}`);
+      }
+    } catch (e) {
+      // ignore revalidatePath error in non-standard context
+    }
+
+    // Ping main site for on-demand ISR cache purge
+    try {
+      const storeUrl = process.env.NEXT_PUBLIC_STORE_URL || "https://smartxman.com";
+      fetch(`${storeUrl}/api/revalidate?path=/blog&secret=${process.env.REVALIDATION_SECRET || "smartxman-revalidate-secret"}`, {
+        method: "POST"
+      }).catch(() => {});
+    } catch (e) {
+      // ignore network errors
+    }
+
+    return { success: true, data: savedBlog, source: "supabase" };
   } catch (err: any) {
-    console.error("Save blog operation failed, falling back to local:", err.message);
-    const local = readLocalBlogs();
-    const isNew = !blogData.id;
-    const payload: any = {
-      title: blogData.title,
-      slug: blogData.slug,
-      cover_image_url: finalCoverImage,
-      cover_image: finalCoverImage,
-      cover_image_alt: blogData.cover_image_alt || "",
-      cover_image_caption: blogData.cover_image_caption || "",
-      content: blogData.content,
-      category: blogData.category || "Buying Guides",
-      excerpt: blogData.excerpt || "",
-      read_time: blogData.read_time || "5 min read",
-      author: blogData.author || "Admin",
-      tags: blogData.tags || [],
-      status: blogData.status || "draft",
-      visibility: blogData.visibility || "public",
-      featured: !!blogData.featured,
-      show_on_homepage: !!blogData.show_on_homepage,
-      is_popular: !!blogData.is_popular,
-      view_count: blogData.view_count || 0,
-      seo_title: blogData.seo_title || "",
-      seo_description: blogData.seo_description || "",
-      canonical_url: blogData.canonical_url || "",
-      og_title: blogData.og_title || "",
-      og_description: blogData.og_description || "",
-      og_image: blogData.og_image || "",
-      focus_keyword: blogData.focus_keyword || "",
-      primary_keyword: blogData.primary_keyword || blogData.focus_keyword || "",
-      secondary_keywords: blogData.secondary_keywords || "",
-      search_intent: blogData.search_intent || "",
-      target_audience: blogData.target_audience || "",
-      author_bio: blogData.author_bio || "",
-      author_image: blogData.author_image || "",
-      noindex: !!blogData.noindex,
-      faqs: blogData.faqs || [],
-      product_blocks: blogData.product_blocks || [],
-      reference_links: blogData.reference_links || [],
-      updated_at: new Date().toISOString()
-    };
-
-    if (isNew) {
-      payload.created_at = new Date().toISOString();
-    }
-    
-    if (blogData.status === "published") {
-      payload.published_at = blogData.published_at || new Date().toISOString();
-    } else {
-      payload.published_at = blogData.published_at || null;
-    }
-
-    if (isNew) {
-      const newBlog = {
-        ...payload,
-        id: String(local.length + 1),
-      };
-      local.push(newBlog);
-      writeLocalBlogs(local);
-      return { success: true, data: newBlog, source: "local" };
-    } else {
-      const index = local.findIndex((b) => b.id === blogData.id);
-      if (index !== -1) {
-        const updatedBlog = {
-          ...local[index],
-          ...payload,
-        };
-        local[index] = updatedBlog;
-        writeLocalBlogs(local);
-        return { success: true, data: updatedBlog, source: "local" };
-      }
-      return { success: false, error: "Blog not found in local db" };
-    }
+    console.error("Save blog exception:", err);
+    return { success: false, error: err.message || "An unexpected error occurred while saving." };
   }
 }
 
@@ -327,21 +208,26 @@ export async function deleteBlog(id: string) {
     const { error } = result;
 
     if (error) {
-      if (error.code === "PGRST205" || error.message.includes("relation \"public.blogs\" does not exist")) {
-        const local = readLocalBlogs();
-        const filtered = local.filter((b) => b.id !== id);
-        writeLocalBlogs(filtered);
-        return { success: true, source: "local" };
-      }
-      throw error;
+      console.error("Supabase delete blog error:", error);
+      return { success: false, error: error.message };
     }
+
+    try {
+      revalidatePath("/admin/blogs");
+    } catch (e) {}
+
+    // Ping store to revalidate
+    try {
+      const storeUrl = process.env.NEXT_PUBLIC_STORE_URL || "https://smartxman.com";
+      fetch(`${storeUrl}/api/revalidate?path=/blog&secret=${process.env.REVALIDATION_SECRET || "smartxman-revalidate-secret"}`, {
+        method: "POST"
+      }).catch(() => {});
+    } catch (e) {}
+
     return { success: true, source: "supabase" };
   } catch (err: any) {
-    console.error("Supabase delete failed, using local:", err.message);
-    const local = readLocalBlogs();
-    const filtered = local.filter((b) => b.id !== id);
-    writeLocalBlogs(filtered);
-    return { success: true, source: "local" };
+    console.error("Supabase delete failed:", err);
+    return { success: false, error: err.message };
   }
 }
 
@@ -349,16 +235,25 @@ export async function getProductsList() {
   try {
     const { data, error } = await supabase
       .from("products")
-      .select("id, name, image_url, affiliate_url, price")
+      .select("id, name, slug, images, price_range, current_price, affiliate_link, affiliate_url")
+      .eq("status", "published")
       .order("name");
     
     if (error) {
-      if (error.code === "PGRST205" || error.message.includes("relation \"public.products\" does not exist")) {
-        return { success: true, data: [] };
-      }
-      throw error;
+      console.error("Error fetching products list:", error);
+      return { success: true, data: [] };
     }
-    return { success: true, data: data || [] };
+
+    const formatted = (data || []).map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      slug: p.slug,
+      image_url: p.images?.[0] || "",
+      price: p.price_range || (p.current_price ? `₹${p.current_price}` : ""),
+      affiliate_url: p.affiliate_link || p.affiliate_url || ""
+    }));
+
+    return { success: true, data: formatted };
   } catch (err: any) {
     console.error("Failed to fetch products for blog builder:", err.message);
     return { success: true, data: [] };
@@ -369,7 +264,6 @@ export async function generateSeoMetadata(title: string, excerpt: string, keywor
   try {
     const apiKey = process.env.NEXT_PUBLIC_GROQ_API_KEY;
     if (!apiKey) {
-      // Fallback heuristic if no API key
       const baseTitle = `${title.substring(0, 45)} | smartXman`;
       const baseDesc = excerpt.substring(0, 157) + "...";
       return { success: true, seoTitle: baseTitle, seoDescription: baseDesc };
@@ -418,4 +312,3 @@ Respond ONLY in JSON format: {"seoTitle": "...", "seoDescription": "..."}`;
     };
   }
 }
-
