@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mail, Lock, User, Globe, ArrowLeft, Loader2, CheckCircle2, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
@@ -24,6 +24,16 @@ export default function AuthPage() {
   const [fullName, setFullName] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const urlError = params.get("error");
+      if (urlError) {
+        setError(decodeURIComponent(urlError));
+      }
+    }
+  }, []);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,6 +78,8 @@ export default function AuthPage() {
 
   const handleGoogleLogin = async () => {
     try {
+      setLoading(true);
+      setError(null);
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
@@ -76,7 +88,8 @@ export default function AuthPage() {
       });
       if (error) throw error;
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || "Failed to initiate Google sign-in");
+      setLoading(false);
     }
   };
 
@@ -120,7 +133,7 @@ export default function AuthPage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all" 
-                        placeholder="you@example.com" 
+                        placeholder="Enter email address" 
                       />
                     </div>
                   </div>
@@ -184,8 +197,10 @@ export default function AuthPage() {
 
                 <div className="grid grid-cols-1 gap-4">
                   <button 
+                    type="button"
                     onClick={handleGoogleLogin}
-                    className="flex items-center justify-center gap-3 py-3 px-4 border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all font-medium text-slate-700 dark:text-slate-300"
+                    disabled={loading}
+                    className="flex items-center justify-center gap-3 py-3 px-4 border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all font-medium text-slate-700 dark:text-slate-300 disabled:opacity-50"
                   >
                     <Globe className="w-5 h-5 text-red-500" />
                     Google
@@ -236,7 +251,7 @@ export default function AuthPage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all" 
-                        placeholder="you@example.com" 
+                        placeholder="Enter email address" 
                       />
                     </div>
                   </div>
@@ -309,7 +324,7 @@ export default function AuthPage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all" 
-                        placeholder="you@example.com" 
+                        placeholder="Enter email address" 
                       />
                     </div>
                   </div>
